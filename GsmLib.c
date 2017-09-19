@@ -124,18 +124,20 @@ void StartGsmTask(void const * argument)
 		if(Gsm.Answer.MsgUsed > 0)
 		{
 			Gsm_MsgGetUnreadIndex();
-			
-			
+			Gsm_MsgGetFreeSpace();
 		}		
 		//++++++++
 		
 		Gsm_UserRunEverySecond();		
 		SlowTask++;
-		if(SlowTask==10)
+		if(SlowTask%10==0)
 		{
-			SlowTask=0;
 			Gsm_GetSignalQuality();
 			Gsm_GetBatteryStatus();
+		}
+		if(SlowTask%60==0)
+		{
+			SlowTask=0;
 			Gsm_MsgGetFreeSpace();
 		}
 		osDelay(1000);
@@ -542,23 +544,27 @@ void			Gsm_Init(osPriority Priority)
 
 	TurnOnAgain:
 	Gsm_SerialSend("AT\r\n");
-	osDelay(100);
+	osDelay(200);
 	if(Gsm.Answer.Power==0)
 	{		
 		HAL_GPIO_WritePin(GSM_POWER_KEY_GPIO_Port, GSM_POWER_KEY_Pin, GPIO_PIN_RESET);
 		osDelay(1500);
 		HAL_GPIO_WritePin(GSM_POWER_KEY_GPIO_Port, GSM_POWER_KEY_Pin, GPIO_PIN_SET);
-		osDelay(5000);		
+		osDelay(4000);		
 		Gsm_SerialSend("AT\r\n");
-		osDelay(100);
+		osDelay(200);
+		for(uint8_t i=0; i<20 ; i++)
+		{
+			osDelay(1000);
+			if((Gsm.Answer.CallReady == 1) && (Gsm.Answer.SmsReady == 1))
+				break;
+		}
 	}
 	if(Gsm.Answer.Power == 0)
-	{
 		goto TurnOnAgain; 		
-	}		
 	
+
 	Gsm_SerialSend("ATE1\r\n");
-	osDelay(100);
 	Gsm_SerialSend("COLP=1\r\n");
 	Gsm_SetMonitorSpeakerLoudness(9);
 	
@@ -568,6 +574,7 @@ void			Gsm_Init(osPriority Priority)
 	Gsm_MsgSetStoreOnSim(false);
 	Gsm_MsgGetServiceCenterAddress();
 	Gsm_MsgGetFreeSpace();
+	osDelay(1000);
 	if(Gsm.Config.MsgFormat == GsmMsgFormat_Text)
 		Gsm_MsgSetTextModeParameter(17,167,0,0);	
 }
