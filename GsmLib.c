@@ -1,8 +1,7 @@
 
 //			www.GitHub.com/NimaLTD
 //			GsmLib Version2				
-//			2.005
-
+//			2.006
 
 #include "GsmLib.h"
 
@@ -38,13 +37,20 @@
 #define			ANS_CSMP				"\r\n+CSMP:"			// get message text oarameter
 #define			ANS_CREC				"\r\n+CREC:"
 
+#define			ANS_BTSTATUS		"\r\n+BTSTATUS:"
+#define			ANS_BTHOST			"\r\n+BTHOST:"
+#define			ANS_BTPAIRING		"\r\n+BTPAIRING:"
+#define			ANS_BTPAIR			"\r\n+BTPAIR:"
+#define			ANS_BTCONNECT		"\r\n+BTCONNECT:"
+#define			ANS_BTDISCONN		"\r\n+BTDISCONN:"
+
 
 
 
 
 
 Gsm_t	Gsm;
-
+Bluetooth_t	Bluetooth;
 osThreadId 		GsmTaskHandle;
 osThreadId 		GsmBufferTaskHandle;
 
@@ -127,7 +133,16 @@ void StartGsmTask(void const * argument)
 			Gsm_MsgGetFreeSpace();
 		}		
 		//++++++++
-		
+		if(Bluetooth.Power == 1)
+		{
+			//Bluetooth_GetStatus();			
+			if(Bluetooth.PairRequest == 1)
+			{
+				Bluetooth.PairRequest=0;
+				Bluetooth_UserPairRequest(Bluetooth.PairDeviceName,Bluetooth.PairDeviceAddress,Bluetooth.PairDevicePassword);				
+			}
+		}
+		//++++++++
 		Gsm_UserRunEverySecond();		
 		SlowTask++;
 		if(SlowTask%10==0)
@@ -153,6 +168,7 @@ void StartGsmBufferTask(void const * argument)
 		{
 			char *str1,*str2,*str3;
 			char str[32];
+			uint8_t	int8;
 			//############################
 			str1 = Gsm.SerialRxBuff;
 			str1 = strstr(str1,ANS_OK);
@@ -500,6 +516,86 @@ void StartGsmBufferTask(void const * argument)
 			}			
 			//############################
 			
+			//############################
+			//############################
+			//############################
+			str1 = Gsm.SerialRxBuff;
+			str1 = strstr(str1,ANS_BTSTATUS);
+			if(str1!=NULL)
+			{
+				str1 = strchr(str1,':');
+				str1++;
+				Bluetooth.Status =(BluetoothStatus_t) atoi(str1);
+			}						
+			//############################
+			str1 = Gsm.SerialRxBuff;
+			str1 = strstr(str1,ANS_BTHOST);
+			if(str1!=NULL)
+			{
+				str1 = strchr(str1,':');
+				str1++;
+				str2 = strchr(str1,',');
+				strncpy(Bluetooth.HostName,str1,str2-str1);
+				str2++;
+				str1 = strchr(str1,'\r');
+				strncpy(Bluetooth.HostAddress,str2,str1-str2);
+			}						
+			//############################
+			str1 = Gsm.SerialRxBuff;
+			str1 = strstr(str1,ANS_BTPAIRING);
+			while(str1!=NULL)
+			{
+				str1 = strchr(str1,':');
+				str1++;
+				int8 = sscanf(str1," \"%[^\"]\",%[^,],%d\r\n",Bluetooth.PairDeviceName,Bluetooth.PairDeviceAddress,&Bluetooth.PairDevicePassword);
+				if(int8==3)
+				{
+					Bluetooth.PairRequest=1;
+					break;
+				}
+				int8 = sscanf(str1," \"%[^\"]\",%[^,]\r\n",Bluetooth.PairDeviceName,Bluetooth.PairDeviceAddress);
+				if(int8==2)
+				{
+					Bluetooth.PairRequest=1;
+					break;
+				}
+		
+				break;
+			}						
+			//############################
+			str1 = Gsm.SerialRxBuff;
+			str1 = strstr(str1,ANS_BTPAIR);
+			if(str1!=NULL)
+			{
+				str1 = strchr(str1,':');
+				str1++;
+				sscanf(str1," %d,\"%[^\"]\",%[^,\r]\r\n",(int*)&Bluetooth.Connected,Bluetooth.PairDeviceName,Bluetooth.PairDeviceAddress);
+			}
+			//############################
+			str1 = Gsm.SerialRxBuff;
+			str1 = strstr(str1,ANS_BTCONNECT);
+			if(str1!=NULL)
+			{
+				str1 = strchr(str1,':');
+				str1++;
+				sscanf(str1," %d,\"%[^\"]\",%[^,],\"%[^\"]\"\r\n",(int*)&Bluetooth.Connected,Bluetooth.PairDeviceName,Bluetooth.PairDeviceAddress,Bluetooth.Profile);
+			}			
+			//############################
+			str1 = Gsm.SerialRxBuff;
+			str1 = strstr(str1,ANS_BTDISCONN);
+			if(str1!=NULL)
+			{
+				str1 = strchr(str1,':');
+				str1++;
+				sscanf(str1," \"%[^\"]\",%[^,],\"%[^\"]\"\r\n",Bluetooth.PairDeviceName,Bluetooth.PairDeviceAddress,Bluetooth.Profile);
+				Bluetooth.Connected = 0;
+			}				
+
+			//############################
+	
+
+			//############################
+				
 			//############################
 			//############################
 			//############################
@@ -968,11 +1064,73 @@ bool	Gsm_WavPlay(uint8_t Index,uint8_t Vol_0_to_100)
 		return false;
 }
 //########################################################################################################################
-
-
 //########################################################################################################################
 //########################################################################################################################
+bool	Bluetooth_On(bool	TurnOnTurnOff)
+{
+	uint16_t BluetoothTimeout=50;	//	5 seconds
+	if(TurnOnTurnOff == false)
+	{
+		Gsm_SerialSend("AT+BTPOWER=0\r\n");
+		Bluetooth.Power=0;
+		Bluetooth.PairRequest=0;
+	}
+	else
+	{
+		Gsm_SerialSend("AT+BTPOWER=0\r\n");
+		Bluetooth.Power=0;
+		osDelay(500);
+		Bluetooth.PairRequest=0;
+		Gsm.Answer.OK=0;
+		Gsm.Answer.ERROR=0;
+		Gsm_SerialSend("AT+BTPOWER=1\r\n");	
+		while(BluetoothTimeout>0)
+		{
+			BluetoothTimeout--;
+			osDelay(100);			
+			if(Gsm.Answer.OK == 1)
+			{
+				Bluetooth.Power=1;
+				Bluetooth_GetHostName();
+				return true;
+			}
+			if(Gsm.Answer.ERROR == 1)
+			{
+				Bluetooth.Power=0;
+				return false;
+			}
+		}
+		return false;
+	}
+	return false;
+}
 //########################################################################################################################
+BluetoothStatus_t				Bluetooth_GetStatus(void)
+{
+	Gsm_SerialSend("AT+BTSTATUS?\r\n");
+	osDelay(200);
+	return Bluetooth.Status;
+}
 
+//########################################################################################################################
+void		Bluetooth_SetHostName(char *Name)
+{
+	char str[32];
+	snprintf(str,sizeof(str),"AT+BTHOST=\"%s\"\r\n",Name);
+	Gsm_SerialSend(str);
+	osDelay(200);
+}
+//########################################################################################################################
+void		Bluetooth_GetHostName(void)
+{
+	Gsm_SerialSend("AT+BTHOST?\r\n");
+	osDelay(200);
+}
+//########################################################################################################################
+void		Bluetooth_PairAccept(void)
+{
+	Gsm_SerialSend("AT+BTPAIR=1,1\r\n");
+	osDelay(200);
+}
 
 

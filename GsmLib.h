@@ -3,7 +3,7 @@
 
 //			www.GitHub.com/NimaLTD
 //			GsmLib Version2				
-//			2.005
+//			2.006
 
 
 #include "FreeRTOS.h"
@@ -132,11 +132,58 @@ typedef struct
 	GsmAnswer_t	Answer;
 	
 }Gsm_t;
+//########################################################################################################################
+//########################################################################################################################
+//########################################################################################################################
+typedef enum
+{
+	BluetoothStatus_Initial=0,
+	BluetoothStatus_Disactivating=1,
+	BluetoothStatus_Activating=2,
+	BluetoothStatus_Idle=5,
+	BluetoothStatus_Scanning=6,
+	BluetoothStatus_Inquiry_Res_Ind=7,
+	BluetoothStatus_StoppingScanning=8,
+	BluetoothStatus_Bonding=9,
+	BluetoothStatus_Connecting=12,
+	BluetoothStatus_Unpairing=13,
+	BluetoothStatus_DeletingPairedDevice=14,
+	BluetoothStatus_DeletingAllPairedDevice=15,
+	BluetoothStatus_Disconnecting=16,
+	BluetoothStatus_PairingConfirmWhilePassivePairing=19,
+	BluetoothStatus_WaitingForRemoteConfirmWhilePassivePairing=20,
+	BluetoothStatus_AcceptingConnection=25,
+	BluetoothStatus_SDC_Refreshing=26,
+	BluetoothStatus_SettingHostName=29,
+	BluetoothStatus_ReleasingAllConnection=30,
+	BluetoothStatus_ReleasingConnection=31,
+	BluetoothStatus_ActivatingService=36,
+	
+}BluetoothStatus_t;
 
+//########################################################################################################################
+typedef	struct
+{
+	uint8_t								Power:1;
+	uint8_t								PairRequest:1;
+	uint8_t								Connected;
+	BluetoothStatus_t			Status;
+	char									Profile[8];
+	char									HostName[18];
+	char									HostAddress[18];
+	char									PairDeviceName[18];
+	char									PairDeviceAddress[18];
+	uint32_t							PairDevicePassword;
+	
+	
+}Bluetooth_t;
+
+//########################################################################################################################
 
 
 
 extern 		Gsm_t	Gsm;
+extern  	Bluetooth_t	 Bluetooth;
 //########################################################################################################################
 void										Gsm_RxCallBack(void);
 //########################################################################################################################
@@ -174,6 +221,17 @@ void										Gsm_MsgGetUnreadIndex(void);
 void										Gsm_MsgSetTextModeParameter(uint8_t fo,uint8_t vp,uint8_t pid,uint8_t dcs);
 void										Gsm_MsgGetTextModeParameter(void);
 //########################################################################################################################
+GsmRecord_t							Gsm_WavGetStatus(void);
+bool										Gsm_WavRecord(uint8_t Index,uint16_t	RecordingLimitTime_Second);
+bool										Gsm_WavPlay(uint8_t Index,uint8_t Vol_0_to_100);
+//########################################################################################################################
+bool										Bluetooth_On(bool	TurnOnTurnOff);
+BluetoothStatus_t				Bluetooth_GetStatus(void);
+void										Bluetooth_SetHostName(char *Name);
+void										Bluetooth_GetHostName(void);
+void										Bluetooth_PairAccept(void);
+//########################################################################################################################
+
 
 
 //########################################################################################################################
@@ -181,8 +239,6 @@ void										Gsm_UserGetCall(char *Number);
 void										Gsm_UserGetMsg(char *Number,char *date,char *time,char *msg);
 void										Gsm_UserRunEverySecond(void);
 //########################################################################################################################
-GsmRecord_t							Gsm_WavGetStatus(void);
-bool										Gsm_WavRecord(uint8_t Index,uint16_t	RecordingLimitTime_Second);
-bool										Gsm_WavPlay(uint8_t Index,uint8_t Vol_0_to_100);
+void										Bluetooth_UserPairRequest(char *DeviceName,char *DeviceAddress,uint32_t DevicePassword);
 //########################################################################################################################
 #endif
