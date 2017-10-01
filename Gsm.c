@@ -139,12 +139,13 @@ bool  Gsm_MsgSetMemoryLocation(GsmMsgMemory_t GsmMsgMemory)
     answer = Sim80x_SendAtCommand("AT+CPMS=\"ME\",\"ME\",\"ME\"\r\n",1000,1,"\r\n+CPMS:");
     if(answer == 1)
     {
-      Sim80x.Gsm.MsgMemory = GsmMsgMemory_OnSim;
+      Sim80x.Gsm.MsgMemory = GsmMsgMemory_OnModule;
       return true;
     }
     else
       return false;
   }
+  return false;
 }
 //######################################################################################################
 GsmTECharacterSet_t     Gsm_MsgGetCharacterFormat(void)
@@ -191,7 +192,14 @@ bool  Gsm_MsgSetCharacterFormat(GsmTECharacterSet_t GsmTECharacterSet)
 //######################################################################################################
 bool  Gsm_MsgRead(uint8_t index)
 {
-  
+  uint8_t answer;
+  char str[16];
+  sprintf(str,"AT+CMGR=%d\r\n",index);
+  answer = Sim80x_SendAtCommand(str,5000,1,"\r\nOK\r\n");
+  if((answer == 1 ) && (Sim80x.Gsm.MsgReadIsOK==1))
+    return true;
+  else
+    return false;    
 }
 //######################################################################################################
 bool  Gsm_MsgDelete(uint8_t index)

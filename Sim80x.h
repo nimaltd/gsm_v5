@@ -83,6 +83,8 @@ typedef struct
 typedef struct
 {
   uint8_t               HaveNewCall:1;
+  uint8_t               MsgReadIsOK:1;
+
   GsmVoiceCallReturn_t  GsmVoiceCallReturn;         
   char                  CallerNumber[16];
   char                  DiallingNumber[16]; 
@@ -97,7 +99,7 @@ typedef struct
   GsmMsgFormat_t        MsgFormat;
   uint8_t               MsgCapacity;
   uint8_t               MsgUsed;
-  
+  uint8_t               HaveNewMsg;  
   
 }Sim80xGsm_t;
 //######################################################################################################################
