@@ -1,8 +1,19 @@
 #include "Sim80x.h"
 
 
-
-
+//######################################################################################################
+bool  Gsm_Ussd(char *send,char *receive)
+{
+  uint8_t answer;
+  char str[32];
+  snprintf(str,sizeof(str),"AT+CUSD=1,\"%s\"\r\n",send);
+  memset(Sim80x.Gsm.Msg,0,sizeof(Sim80x.Gsm.Msg));
+  answer = Sim80x_SendAtCommand(str,60000,2,"\r\n+CUSD:","\r\n+CME ERROR:");
+  if((answer == 1) && (Sim80x.Gsm.Msg[0]!=0))
+    return true;
+  else
+    return false;
+}
 //######################################################################################################
 bool  Gsm_CallAnswer(void)
 {
@@ -218,13 +229,73 @@ bool  Gsm_MsgDelete(uint8_t index)
     return false;  
 }
 //######################################################################################################
-
-
-
+bool  Gsm_MsgGetServiceNumber(void)
+{
+  uint8_t answer;
+  answer = Sim80x_SendAtCommand("AT+CSCA?\r\n",5000,1,"\r\n+CSCA:");
+  if((answer == 1) && (Sim80x.Gsm.MsgServiceNumber[0]!=0))
+    return true;
+  else
+    return false;
+}
 //######################################################################################################
-
+bool  Gsm_MsgSetServiceNumber(char *ServiceNumber)
+{
+  uint8_t answer;
+  char str[32];
+  char strParam[32];
+  snprintf(str,sizeof(str),"AT+CSCA=\"%s\",145\r\n",ServiceNumber);
+  snprintf(strParam,sizeof(str),"AT+CSCA=\"%s\"\r\r\nOK\r\n",ServiceNumber);
+  answer = Sim80x_SendAtCommand(str,5000,1,strParam);
+  if(answer == 1)
+    return true;
+  else
+    return false;
+}
 //######################################################################################################
-
+bool  Gsm_MsgGetTextModeParameter(void)
+{
+  uint8_t answer;
+  answer = Sim80x_SendAtCommand("AT+CSMP?\r\n",500,1,"\r\nOK\r\n");
+  if(answer == 1)
+    return true;
+  else
+    return false;  
+}
+//######################################################################################################
+bool  Gsm_MsgSetTextModeParameter(uint8_t fo,uint8_t vp,uint8_t pid,uint8_t dcs)
+{
+  uint8_t answer;
+  char str[32];
+  char strParam[32];
+  snprintf(str,sizeof(str),"AT+CSMP=%d,%d,%d,%d\r\n",fo,vp,pid,dcs);
+  snprintf(strParam,sizeof(strParam),"AT+CSMP=%d,%d,%d,%d\r\nOK\r\n",fo,vp,pid,dcs);
+  answer = Sim80x_SendAtCommand(str,500,1,strParam);
+  if(answer == 1)
+    return true;
+  else
+    return false;
+}
+//######################################################################################################
+bool  Gsm_MsgSendText(char *Number,char *msg)
+{
+  uint8_t answer;
+  char str[32];
+  if(Sim80x.Gsm.MsgFormat != GsmMsgFormat_Text)
+    Gsm_MsgSetFormat(GsmMsgFormat_Text);
+  snprintf(str,sizeof(str),"AT+CMGS=\"%s\"\r\n",Number);
+  answer = Sim80x_SendAtCommand(str,10000,1,"\r\r\n> ");
+  if(answer != 1)
+    return false;
+  strcpy(Sim80x.Gsm.MsgSentNumber,Number);
+  Sim80x_SendString(msg);
+  sprintf(str,"%c",26);
+  answer = Sim80x_SendAtCommand(str,60000,1,"\r\n+CMGS: ");
+  if(answer == 1)
+    return true;
+  else
+    return false;      
+}
 //######################################################################################################
 
 //######################################################################################################

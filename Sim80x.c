@@ -10,7 +10,7 @@ void 	        StartSim80xBuffTask(void const * argument);
 //######################################################################################################################
 //######################################################################################################################
 //######################################################################################################################
-void	Sim80x_SerialSendString(char *str)
+void	Sim80x_SendString(char *str)
 {
 	while(_SIM80X_USART.gState != HAL_UART_STATE_READY)
 		osDelay(10);
@@ -38,6 +38,7 @@ uint8_t     Sim80x_SendAtCommand(char *AtCommand,int32_t  MaxWaiting_ms,uint8_t 
     osDelay(100);
   }
   Sim80x.Status.Busy = 1;
+  Sim80x.AtCommand.FindAnswer = 0;
   Sim80x.AtCommand.ReceiveAnswerExeTime=0;
   Sim80x.AtCommand.SendCommandStartTime = HAL_GetTick();
   Sim80x.AtCommand.ReceiveAnswerMaxWaiting = MaxWaiting_ms;
@@ -52,11 +53,11 @@ uint8_t     Sim80x_SendAtCommand(char *AtCommand,int32_t  MaxWaiting_ms,uint8_t 
   }
   va_end (tag);		  
   strncpy(Sim80x.AtCommand.SendCommand,AtCommand,sizeof(Sim80x.AtCommand.SendCommand));            
-  Sim80x_SerialSendString(Sim80x.AtCommand.SendCommand); 
+  Sim80x_SendString(Sim80x.AtCommand.SendCommand); 
   while( MaxWaiting_ms > 0)
   {
     osDelay(10);
-    if(Sim80x.Status.Busy==0)
+    if(Sim80x.AtCommand.FindAnswer > 0)
       return Sim80x.AtCommand.FindAnswer;    
     MaxWaiting_ms-=10;
   }
@@ -80,8 +81,16 @@ void  Sim80x_SetPower(bool TurnOn)
       Sim80x_SendAtCommand("AT+CLIP=1\r\n",200,1,"AT+CLIP=1\r\r\nOK\r\n");
       Gsm_MsgSetMemoryLocation(GsmMsgMemory_OnModule);
       Gsm_MsgSetFormat(GsmMsgFormat_Text);
+      Gsm_MsgSetTextModeParameter(17,167,0,0);
       Gsm_MsgGetCharacterFormat();
       Gsm_MsgGetFormat();
+      if(Sim80x.Gsm.MsgFormat != GsmMsgFormat_Text)
+        Gsm_MsgSetFormat(GsmMsgFormat_Text);
+      Gsm_MsgGetServiceNumber();
+      Gsm_MsgGetTextModeParameter();
+      Sim80x_GetIMEI(NULL);
+      
+      Bluetooth_SetAutoPair(true);
     }
     else
     {      
@@ -91,15 +100,23 @@ void  Sim80x_SetPower(bool TurnOn)
       osDelay(3000);  
       if(Sim80x_SendAtCommand("AT\r\n",200,1,"AT\r\r\nOK\r\n") == 1)
       {
+        osDelay(10000);
         Sim80x.Status.Power=1;
         Sim80x_SendAtCommand("ATE1\r\n",200,1,"ATE1\r\r\nOK\r\n");
         Sim80x_SendAtCommand("AT+COLP=1\r\n",200,1,"AT+COLP=1\r\r\nOK\r\n");
         Sim80x_SendAtCommand("AT+CLIP=1\r\n",200,1,"AT+CLIP=1\r\r\nOK\r\n");
         Gsm_MsgSetMemoryLocation(GsmMsgMemory_OnModule);
         Gsm_MsgSetFormat(GsmMsgFormat_Text);
+        Gsm_MsgSetTextModeParameter(17,167,0,0);
         Gsm_MsgGetCharacterFormat();
         Gsm_MsgGetFormat();
-        
+        if(Sim80x.Gsm.MsgFormat != GsmMsgFormat_Text)
+          Gsm_MsgSetFormat(GsmMsgFormat_Text);
+        Gsm_MsgGetServiceNumber();
+        Gsm_MsgGetTextModeParameter(); 
+        Sim80x_GetIMEI(NULL);    
+
+        Bluetooth_SetAutoPair(true);        
       }
       else
         Sim80x.Status.Power=0;
@@ -117,6 +134,28 @@ void  Sim80x_SetPower(bool TurnOn)
   }  
 }
 //######################################################################################################################
+void Sim80x_SetFactoryDefault(void)
+{
+  Sim80x_SendAtCommand("AT&F0\r\n",1000,1,"AT&F0\r\r\nOK\r\n");
+}
+//######################################################################################################################
+void  Sim80x_GetIMEI(char *IMEI)
+{
+  uint8_t answer;
+  answer = Sim80x_SendAtCommand("AT+GSN\r\n",1000,1,"\r\nOK\r\n");
+  
+  
+}
+//######################################################################################################################
+
+//######################################################################################################################
+
+//######################################################################################################################
+
+//######################################################################################################################
+
+
+//######################################################################################################################
 void	Sim80x_Init(osPriority Priority)
 {
   HAL_GPIO_WritePin(_SIM80X_POWER_KEY_GPIO,_SIM80X_POWER_KEY_PIN,GPIO_PIN_SET);
@@ -128,17 +167,14 @@ void	Sim80x_Init(osPriority Priority)
   Sim80xTaskHandle = osThreadCreate(osThread(Sim80xTask), NULL);
   osThreadDef(Sim80xBuffTask, StartSim80xBuffTask, Priority, 0, 256);
   Sim80xBuffTaskHandle = osThreadCreate(osThread(Sim80xBuffTask), NULL);
-  
+  osDelay(3000);  
   Sim80x_SetPower(true); 
 }
-  
 //######################################################################################################################
 void  Sim80x_BufferProcess(void)
 {
-  char      *strStart,*str1,*str2,*str3,*str4;
-  char      tmp_str[32];
+  char      *strStart,*str1,*str2,*str3,tmp_str[16];
   int32_t   tmp_int32_t;
-  float     tmp_float;
   
   strStart = (char*)&Sim80x.UsartRxBuffer[0];  
   //##################################################
@@ -271,6 +307,134 @@ void  Sim80x_BufferProcess(void)
     Sim80x.Gsm.HaveNewMsg = atoi(str1);    
   }
   //##################################################  
+  str1 = strstr(strStart,"\r\n+CSCA:");
+  if(str1!=NULL)
+  {
+    memset(Sim80x.Gsm.MsgServiceNumber,0,sizeof(Sim80x.Gsm.MsgServiceNumber));
+    str1 = strchr(str1,'"');
+    str1++;
+    str2 = strchr(str1,'"');
+    strncpy(Sim80x.Gsm.MsgServiceNumber,str1,str2-str1);
+  }
+  //##################################################  
+  str1 = strstr(strStart,"\r\n+CSMP:");
+  if(str1!=NULL)
+  {
+    tmp_int32_t = sscanf(str1,"\r\n+CSMP: %d,%d,%d,%d\r\nOK\r\n",(int*)&Sim80x.Gsm.MsgTextModeParameterFo,(int*)&Sim80x.Gsm.MsgTextModeParameterVp,(int*)&Sim80x.Gsm.MsgTextModeParameterPid,(int*)&Sim80x.Gsm.MsgTextModeParameterDcs);
+    
+  }
+  //##################################################  
+  str1 = strstr(strStart,"\r\n+CUSD:");
+  if(str1!=NULL)
+  {
+    sscanf(str1,"\r\n+CUSD: 0, \"%[^\r]s",Sim80x.Gsm.Msg);    
+    tmp_int32_t = strlen(Sim80x.Gsm.Msg);
+    if(tmp_int32_t > 5)
+    {
+      Sim80x.Gsm.Msg[tmp_int32_t-5] = 0;
+    }
+  }
+  //##################################################  
+  str1 = strstr(strStart,"\nAT+GSN\r");
+  if(str1!=NULL)
+  {
+    sscanf(str1,"\nAT+GSN\r\r\n%[^\r]",Sim80x.IMEI);    
+  }
+  //##################################################  
+  
+  //##################################################  
+  
+  
+  //##################################################  
+  
+  //##################################################  
+  
+  //##################################################  
+  
+  //##################################################  
+  
+  //##################################################  
+  
+  //##################################################  
+  //##################################################  
+  //##################################################  
+  str1 = strstr(strStart,"\r\n+BTHOST:");
+  if(str1!=NULL)
+  {
+    sscanf(str1,"\r\n+BTHOST: %[^,],%[^\r]",Sim80x.Bluetooth.HostName,Sim80x.Bluetooth.HostAddress);    
+  }  
+  //##################################################  
+  str1 = strstr(strStart,"\r\n+BTSTATUS:");
+  if(str1!=NULL)
+  {
+    str1 = strchr(str1,':');
+    str1++;
+    Sim80x.Bluetooth.Status = (BluetoothStatus_t)atoi(str1);
+    
+    str3 = strstr(str1,"\r\nOK\r\n");
+    str2 = strstr(str1,"\r\nC:");
+    if((str2 != NULL) && (str2 <str3) && (str2 > str1))
+    {
+      tmp_int32_t = sscanf(str2,"\r\nC: %d,%[^,]%[^,]%[^\r]",(int*)&Sim80x.Bluetooth.ConnectedID,Sim80x.Bluetooth.ConnectedName,Sim80x.Bluetooth.ConnectedAddress,tmp_str);       
+    }    
+  }  
+  //##################################################  
+  str1 = strstr(strStart,"\r\n+BTPAIRING:");
+  if(str1!=NULL)
+  {
+    Sim80x.Bluetooth.ConnectedID=0;
+    Sim80x.Bluetooth.ConnectedProfile=BluetoothProfile_NotSet;
+    memset(Sim80x.Bluetooth.ConnectedAddress,0,sizeof(Sim80x.Bluetooth.ConnectedAddress));
+    memset(Sim80x.Bluetooth.ConnectedName,0,sizeof(Sim80x.Bluetooth.ConnectedName));
+    tmp_int32_t = sscanf(str1,"\r\n+BTPAIRING: \"%[^\"]\",%[^,],%[^\r]",Sim80x.Bluetooth.ConnectedName,Sim80x.Bluetooth.ConnectedAddress,Sim80x.Bluetooth.PairingPassword);
+    if(tmp_int32_t == 3)
+      Sim80x.Bluetooth.ConnectedID = 255;      
+  }    
+  //##################################################  
+  str1 = strstr(strStart,"\r\n+BTPAIR:");
+  if(str1!=NULL)
+  {
+    
+  }
+  //##################################################  
+  str1 = strstr(strStart,"\r\n+BTCONNECT:");
+  if(str1!=NULL)
+  {
+    Sim80x.Bluetooth.ConnectedID=0;
+    Sim80x.Bluetooth.ConnectedProfile=BluetoothProfile_NotSet;
+    memset(Sim80x.Bluetooth.ConnectedAddress,0,sizeof(Sim80x.Bluetooth.ConnectedAddress));
+    memset(Sim80x.Bluetooth.ConnectedName,0,sizeof(Sim80x.Bluetooth.ConnectedName));
+    tmp_int32_t = sscanf(str1,"\r\n+BTCONNECT: %d,\"%[^\"]\",%[^,],%[^\r]",(int*)&Sim80x.Bluetooth.ConnectedID,Sim80x.Bluetooth.ConnectedName,Sim80x.Bluetooth.ConnectedAddress,tmp_str);
+    if(strcmp(tmp_str,"\"HFP\"")==0)
+      Sim80x.Bluetooth.ConnectedProfile = BluetoothProfile_HSP_HFP;
+    else if(strcmp(tmp_str,"\"HSP\"")==0)
+      Sim80x.Bluetooth.ConnectedProfile = BluetoothProfile_HSP_HFP;
+    else if(strcmp(tmp_str,"\"A2DP\"")==0)
+      Sim80x.Bluetooth.ConnectedProfile = BluetoothProfile_A2DP;
+    else if(strcmp(tmp_str,"\"GAP\"")==0)
+      Sim80x.Bluetooth.ConnectedProfile = BluetoothProfile_GAP;
+    else if(strcmp(tmp_str,"\"GOEP\"")==0)
+      Sim80x.Bluetooth.ConnectedProfile = BluetoothProfile_GOEP;
+    else if(strcmp(tmp_str,"\"OPP\"")==0)
+      Sim80x.Bluetooth.ConnectedProfile = BluetoothProfile_OPP;
+    else if(strcmp(tmp_str,"\"SDAP\"")==0)
+      Sim80x.Bluetooth.ConnectedProfile = BluetoothProfile_SDAP;
+    else if(strcmp(tmp_str,"\"SSP\"")==0)
+      Sim80x.Bluetooth.ConnectedProfile = BluetoothProfile_SSP;
+    else Sim80x.Bluetooth.ConnectedProfile = BluetoothProfile_NotSet;
+  }
+  //##################################################  
+  str1 = strstr(strStart,"\r\n+BTDISCONN:");
+  if(str1!=NULL)
+  {
+    Sim80x.Bluetooth.ConnectedID=0;
+    Sim80x.Bluetooth.ConnectedProfile=BluetoothProfile_NotSet;
+    memset(Sim80x.Bluetooth.ConnectedAddress,0,sizeof(Sim80x.Bluetooth.ConnectedAddress));
+    memset(Sim80x.Bluetooth.ConnectedName,0,sizeof(Sim80x.Bluetooth.ConnectedName));    
+  }
+  //##################################################  
+  
+  //##################################################  
   
   //##################################################
   for( uint8_t parameter=0; parameter<11; parameter++)
@@ -308,7 +472,9 @@ void StartSim80xBuffTask(void const * argument)
   {
     if( ((Sim80x.UsartRxIndex>4) && (HAL_GetTick()-Sim80x.UsartRxLastTime > 50)))
     {
+      Sim80x.BufferStartTime = HAL_GetTick();      
       Sim80x_BufferProcess();      
+      Sim80x.BufferExeTime = HAL_GetTick()-Sim80x.BufferStartTime;
     }
     osDelay(10);
   }    
@@ -319,12 +485,18 @@ void StartSim80xTask(void const * argument)
   uint32_t TimeForSlowRun=0;
   uint8_t UnreadMsgCounter=1;
   while(1)
-  {
+  {    
+    //###########################################
+    if(Sim80x.Bluetooth.ConnectedID==255)
+    {
+      Sim80x.Bluetooth.ConnectedID=0;
+      Bluetooth_UserNewPairingRequest(Sim80x.Bluetooth.ConnectedName,Sim80x.Bluetooth.ConnectedAddress,Sim80x.Bluetooth.PairingPassword);      
+    }
     //###########################################
     if(Sim80x.Gsm.MsgUsed > 0)
     {
       if(Gsm_MsgRead(UnreadMsgCounter)==true)
-        Gsm_UserHaveNewMsg(Sim80x.Gsm.MsgNumber,Sim80x.Gsm.MsgDate,Sim80x.Gsm.MsgTime,Sim80x.Gsm.Msg);
+        Gsm_UserNewMsg(Sim80x.Gsm.MsgNumber,Sim80x.Gsm.MsgDate,Sim80x.Gsm.MsgTime,Sim80x.Gsm.Msg);
       Gsm_MsgDelete(UnreadMsgCounter);
       Gsm_MsgGetMemoryStatus();
       UnreadMsgCounter++;
@@ -336,7 +508,7 @@ void StartSim80xTask(void const * argument)
     {
       Gsm_MsgGetMemoryStatus();
       if(Gsm_MsgRead(Sim80x.Gsm.HaveNewMsg)==true)
-        Gsm_UserHaveNewMsg(Sim80x.Gsm.MsgNumber,Sim80x.Gsm.MsgDate,Sim80x.Gsm.MsgTime,Sim80x.Gsm.Msg);
+        Gsm_UserNewMsg(Sim80x.Gsm.MsgNumber,Sim80x.Gsm.MsgDate,Sim80x.Gsm.MsgTime,Sim80x.Gsm.Msg);
       Gsm_MsgDelete(Sim80x.Gsm.HaveNewMsg);
       Gsm_MsgGetMemoryStatus();  
       Sim80x.Gsm.HaveNewMsg=0;
@@ -345,7 +517,7 @@ void StartSim80xTask(void const * argument)
     if(Sim80x.Gsm.HaveNewCall == 1)
     {
       Sim80x.Gsm.HaveNewCall = 0;
-      Gsm_UserHaveNewCall(Sim80x.Gsm.CallerNumber);     
+      Gsm_UserNewCall(Sim80x.Gsm.CallerNumber);     
     }    
     //###########################################
     if(HAL_GetTick() - TimeForSlowRun > 20000)

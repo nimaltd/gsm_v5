@@ -6,13 +6,14 @@ void  Gsm_User(uint32_t StartupTime)
   
 }
 //##################################################################################################################
-void  Gsm_UserHaveNewCall(const char *CallerNumber)
+void  Gsm_UserNewCall(const char *CallerNumber)
 {
   //Gsm_CallDisconnect(); 
   //Gsm_CallAnswer();    
+
 }
 //##################################################################################################################
-void  Gsm_UserHaveNewMsg(char *Number,char *Date,char *Time,char *msg)
+void  Gsm_UserNewMsg(char *Number,char *Date,char *Time,char *msg)
 {
   
   
