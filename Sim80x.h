@@ -139,7 +139,7 @@ typedef struct
 //######################################################################################################################
 typedef enum
 {
-  BluetoothProfile_NotSet,
+  BluetoothProfile_NotSet=0,
   BluetoothProfile_GAP,
   BluetoothProfile_SDAP,
   BluetoothProfile_SSP,
@@ -153,6 +153,7 @@ typedef enum
 typedef struct
 {
   uint8_t               Visibility:1;
+  uint8_t               NeedGetStatus:1;
   BluetoothStatus_t     Status;
   char                  HostName[19];
   char                  HostAddress[19];
@@ -160,8 +161,10 @@ typedef struct
   uint8_t               ConnectedID;
   char                  ConnectedName[19];
   char                  ConnectedAddress[19];
-  BluetoothProfile_t    ConnectedProfile;
-  
+  BluetoothProfile_t    ConnectedProfile[5];
+  BluetoothProfile_t    ConnectingRequestProfile;
+  uint16_t              SPPLen;
+  char                  SPPBuffer[1024];  
   
 }Sim80xBluetooth_t;
 //######################################################################################################################
@@ -195,6 +198,7 @@ extern Sim80x_t         Sim80x;
 //######################################################################################################################
 //######################################################################################################################
 void	                  Sim80x_SendString(char *str);
+void                    Sim80x_SendRaw(uint8_t *Data,uint16_t len);
 uint8_t                 Sim80x_SendAtCommand(char *AtCommand,int32_t  MaxWaiting_ms,uint8_t HowMuchAnswers,...);
 //######################################################################################################################
 void				            Sim80x_RxCallBack(void);
@@ -233,6 +237,8 @@ bool                    Gsm_MsgSetTextModeParameter(uint8_t fo,uint8_t vp,uint8_
 bool                    Gsm_MsgSendText(char *Number,char *msg);  
 //######################################################################################################################
 void                    Bluetooth_UserNewPairingRequest(char *Name,char *Address,char *Pass);
+void                    Bluetooth_UserConnectingSpp(void);
+void                    Bluetooth_UserNewSppData(char *NewData,uint16_t len);
 bool                    Bluetooth_SetPower(bool TurnOn);
 bool                    Bluetooth_GetHostName(void);  
 bool                    Bluetooth_SetHostName(char *HostName);
@@ -244,6 +250,8 @@ bool                    Bluetooth_SetPairPassword(char  *Pass);
 bool                    Bluetooth_Unpair(uint8_t  Unpair_0_to_all);  
 bool                    Bluetooth_GetVisibility(void);
 void                    Bluetooth_SetVisibility(bool Visible);
+void                    Bluetooth_SppAllowConnection(bool Accept);
+bool                    Bluetooth_SppSend(char *DataString);
 
 
 #endif

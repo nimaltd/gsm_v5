@@ -49,6 +49,7 @@ bool  Bluetooth_SetPower(bool TurnOn)
     }
     return false;     
   }
+  return false; 
 }
 //#################################################################################################################
 bool  Bluetooth_GetHostName(void)
@@ -168,26 +169,42 @@ bool Bluetooth_Unpair(uint8_t  Unpair_0_to_all)
 //#################################################################################################################
 bool  Bluetooth_GetVisibility(void)
 {
-  uint8_t answer;
-  answer = Sim80x_SendAtCommand("AT+BTVIS?\r\n",1000,2,"\r\nOK\r\n","\r\nERROR\r\n");
+  Sim80x_SendAtCommand("AT+BTVIS?\r\n",1000,2,"\r\nOK\r\n","\r\nERROR\r\n");
   return Sim80x.Bluetooth.Visibility;
 }
 //#################################################################################################################
 void  Bluetooth_SetVisibility(bool Visible)
 {
-  uint8_t answer;
-  char str[16];
+ char str[16];
   snprintf(str,sizeof(str),"AT+BTVIS=%d\r\n",Visible);
-  answer = Sim80x_SendAtCommand(str,1000,2,"\r\nOK\r\n","\r\nERROR\r\n");
+  Sim80x_SendAtCommand(str,1000,2,"\r\nOK\r\n","\r\nERROR\r\n");
 }
 //#################################################################################################################
-
-
-
+void  Bluetooth_SppAllowConnection(bool Accept)
+{
+  char str[16];
+  snprintf(str,sizeof(str),"AT+BTACPT=%d\r\n",Accept);
+  Sim80x_SendAtCommand(str,1000,2,"\r\nOK\r\n","\r\nERROR\r\n");  
+}
 //#################################################################################################################
-
-
-
+bool  Bluetooth_SppSend(char *DataString)
+{
+  uint8_t answer;
+  char str[2];
+  answer = Sim80x_SendAtCommand("AT+BTSPPSEND\r\n",1000,2,"\r\r\n> ","\r\nERROR\r\n");
+  if(answer == 1)
+  {
+    Sim80x_SendString(DataString);
+    sprintf(str,"%c",26);
+    answer = Sim80x_SendAtCommand(str,1000,2,"\r\nSEND OK\r\n","\r\nERROR\r\n");
+    if(answer == 1)
+      return true;
+    else
+      return false;
+  }
+  else
+    return false;
+}
 //#################################################################################################################
 
 

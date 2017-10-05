@@ -19,6 +19,15 @@ void	Sim80x_SendString(char *str)
 		osDelay(10);
 }
 //######################################################################################################################
+void  Sim80x_SendRaw(uint8_t *Data,uint16_t len)
+{
+	while(_SIM80X_USART.gState != HAL_UART_STATE_READY)
+		osDelay(10);
+	HAL_UART_Transmit_DMA(&_SIM80X_USART,Data,len);
+	while(_SIM80X_USART.gState != HAL_UART_STATE_READY)
+		osDelay(10);
+}
+//######################################################################################################################
 void	Sim80x_RxCallBack(void)
 {
   if(Sim80x.UsartRxTemp!=0)
@@ -424,27 +433,41 @@ void  Sim80x_BufferProcess(void)
     Sim80x.Bluetooth.Status = (BluetoothStatus_t)atoi(str1);
     
     str3 = strstr(str1,"\r\nOK\r\n");
+    CheckAnotherConnectedProfile:
     str2 = strstr(str1,"\r\nC:");
     if((str2 != NULL) && (str2 <str3) && (str2 > str1))
     {
       tmp_int32_t = sscanf(str2,"\r\nC: %d,%[^,],%[^,],%[^\r]",(int*)&Sim80x.Bluetooth.ConnectedID,Sim80x.Bluetooth.ConnectedName,Sim80x.Bluetooth.ConnectedAddress,tmp_str);       
       if(strcmp(tmp_str,"\"HFP\"")==0)
-        Sim80x.Bluetooth.ConnectedProfile = BluetoothProfile_HSP_HFP;
+        tmp_int32_t = BluetoothProfile_HSP_HFP;
       else if(strcmp(tmp_str,"\"HSP\"")==0)
-        Sim80x.Bluetooth.ConnectedProfile = BluetoothProfile_HSP_HFP;
+        tmp_int32_t = BluetoothProfile_HSP_HFP;
       else if(strcmp(tmp_str,"\"A2DP\"")==0)
-        Sim80x.Bluetooth.ConnectedProfile = BluetoothProfile_A2DP;
+        tmp_int32_t = BluetoothProfile_A2DP;
       else if(strcmp(tmp_str,"\"GAP\"")==0)
-        Sim80x.Bluetooth.ConnectedProfile = BluetoothProfile_GAP;
+        tmp_int32_t = BluetoothProfile_GAP;
       else if(strcmp(tmp_str,"\"GOEP\"")==0)
-        Sim80x.Bluetooth.ConnectedProfile = BluetoothProfile_GOEP;
+        tmp_int32_t = BluetoothProfile_GOEP;
       else if(strcmp(tmp_str,"\"OPP\"")==0)
-        Sim80x.Bluetooth.ConnectedProfile = BluetoothProfile_OPP;
+        tmp_int32_t = BluetoothProfile_OPP;
       else if(strcmp(tmp_str,"\"SDAP\"")==0)
-        Sim80x.Bluetooth.ConnectedProfile = BluetoothProfile_SDAP;
-      else if(strcmp(tmp_str,"\"SSP\"")==0)
-        Sim80x.Bluetooth.ConnectedProfile = BluetoothProfile_SSP;
-      else Sim80x.Bluetooth.ConnectedProfile = BluetoothProfile_NotSet;
+        tmp_int32_t = BluetoothProfile_SDAP;
+      else if(strcmp(tmp_str,"\"SPP\"")==0)
+        tmp_int32_t = BluetoothProfile_SSP;
+      else tmp_int32_t = BluetoothProfile_NotSet;
+    
+      for(uint8_t i=0 ;i<sizeof(Sim80x.Bluetooth.ConnectedProfile) ; i++)
+      {
+        if(Sim80x.Bluetooth.ConnectedProfile[i]==(BluetoothProfile_t)tmp_int32_t)
+          break;
+        if(Sim80x.Bluetooth.ConnectedProfile[i]==BluetoothProfile_NotSet)
+        {
+          Sim80x.Bluetooth.ConnectedProfile[i]=(BluetoothProfile_t)tmp_int32_t;
+          break;
+        }
+      }
+      str1+=5;
+      goto CheckAnotherConnectedProfile;
     }    
   }  
   //##################################################  
@@ -452,7 +475,6 @@ void  Sim80x_BufferProcess(void)
   if(str1!=NULL)
   {
     Sim80x.Bluetooth.ConnectedID=0;
-    Sim80x.Bluetooth.ConnectedProfile=BluetoothProfile_NotSet;
     memset(Sim80x.Bluetooth.ConnectedAddress,0,sizeof(Sim80x.Bluetooth.ConnectedAddress));
     memset(Sim80x.Bluetooth.ConnectedName,0,sizeof(Sim80x.Bluetooth.ConnectedName));
     tmp_int32_t = sscanf(str1,"\r\n+BTPAIRING: \"%[^\"]\",%[^,],%[^\r]",Sim80x.Bluetooth.ConnectedName,Sim80x.Bluetooth.ConnectedAddress,Sim80x.Bluetooth.PairingPassword);
@@ -470,36 +492,75 @@ void  Sim80x_BufferProcess(void)
   if(str1!=NULL)
   {
     Sim80x.Bluetooth.ConnectedID=0;
-    Sim80x.Bluetooth.ConnectedProfile=BluetoothProfile_NotSet;
     memset(Sim80x.Bluetooth.ConnectedAddress,0,sizeof(Sim80x.Bluetooth.ConnectedAddress));
     memset(Sim80x.Bluetooth.ConnectedName,0,sizeof(Sim80x.Bluetooth.ConnectedName));
     tmp_int32_t = sscanf(str1,"\r\n+BTCONNECT: %d,\"%[^\"]\",%[^,],%[^\r]",(int*)&Sim80x.Bluetooth.ConnectedID,Sim80x.Bluetooth.ConnectedName,Sim80x.Bluetooth.ConnectedAddress,tmp_str);
     if(strcmp(tmp_str,"\"HFP\"")==0)
-      Sim80x.Bluetooth.ConnectedProfile = BluetoothProfile_HSP_HFP;
+      tmp_int32_t = BluetoothProfile_HSP_HFP;
     else if(strcmp(tmp_str,"\"HSP\"")==0)
-      Sim80x.Bluetooth.ConnectedProfile = BluetoothProfile_HSP_HFP;
+      tmp_int32_t = BluetoothProfile_HSP_HFP;
     else if(strcmp(tmp_str,"\"A2DP\"")==0)
-      Sim80x.Bluetooth.ConnectedProfile = BluetoothProfile_A2DP;
+      tmp_int32_t = BluetoothProfile_A2DP;
     else if(strcmp(tmp_str,"\"GAP\"")==0)
-      Sim80x.Bluetooth.ConnectedProfile = BluetoothProfile_GAP;
+      tmp_int32_t = BluetoothProfile_GAP;
     else if(strcmp(tmp_str,"\"GOEP\"")==0)
-      Sim80x.Bluetooth.ConnectedProfile = BluetoothProfile_GOEP;
+      tmp_int32_t = BluetoothProfile_GOEP;
     else if(strcmp(tmp_str,"\"OPP\"")==0)
-      Sim80x.Bluetooth.ConnectedProfile = BluetoothProfile_OPP;
+      tmp_int32_t = BluetoothProfile_OPP;
     else if(strcmp(tmp_str,"\"SDAP\"")==0)
-      Sim80x.Bluetooth.ConnectedProfile = BluetoothProfile_SDAP;
-    else if(strcmp(tmp_str,"\"SSP\"")==0)
-      Sim80x.Bluetooth.ConnectedProfile = BluetoothProfile_SSP;
-    else Sim80x.Bluetooth.ConnectedProfile = BluetoothProfile_NotSet;
+      tmp_int32_t = BluetoothProfile_SDAP;
+    else if(strcmp(tmp_str,"\"SPP\"")==0)
+      tmp_int32_t = BluetoothProfile_SSP;
+    else tmp_int32_t = BluetoothProfile_NotSet;
+    
+    for(uint8_t i=0 ;i<sizeof(Sim80x.Bluetooth.ConnectedProfile) ; i++)
+    {
+      if(Sim80x.Bluetooth.ConnectedProfile[i]==(BluetoothProfile_t)tmp_int32_t)
+        break;
+      if(Sim80x.Bluetooth.ConnectedProfile[i]==BluetoothProfile_NotSet)
+      {
+        Sim80x.Bluetooth.ConnectedProfile[i]=(BluetoothProfile_t)tmp_int32_t;
+        break;
+      }
+    }
+  }
+  //##################################################  
+  str1 = strstr(strStart,"\r\n+BTCONNECTING:");
+  if(str1!=NULL)
+  {
+    memset(tmp_str,0,sizeof(tmp_str));
+    str1 = strchr(str1,',');
+    str1++;
+    str2 = strchr(str1+1,'"');
+    str2++;
+    strncpy(tmp_str,str1,str2-str1);
+    if(strcmp(tmp_str,"\"HFP\"")==0)
+      Sim80x.Bluetooth.ConnectingRequestProfile = BluetoothProfile_HSP_HFP;
+    else if(strcmp(tmp_str,"\"HSP\"")==0)
+      Sim80x.Bluetooth.ConnectingRequestProfile = BluetoothProfile_HSP_HFP;
+    else if(strcmp(tmp_str,"\"A2DP\"")==0)
+      Sim80x.Bluetooth.ConnectingRequestProfile = BluetoothProfile_A2DP;
+    else if(strcmp(tmp_str,"\"GAP\"")==0)
+      Sim80x.Bluetooth.ConnectingRequestProfile = BluetoothProfile_GAP;
+    else if(strcmp(tmp_str,"\"GOEP\"")==0)
+      Sim80x.Bluetooth.ConnectingRequestProfile = BluetoothProfile_GOEP;
+    else if(strcmp(tmp_str,"\"OPP\"")==0)
+      Sim80x.Bluetooth.ConnectingRequestProfile = BluetoothProfile_OPP;
+    else if(strcmp(tmp_str,"\"SDAP\"")==0)
+      Sim80x.Bluetooth.ConnectingRequestProfile = BluetoothProfile_SDAP;
+    else if(strcmp(tmp_str,"\"SPP\"")==0)
+      Sim80x.Bluetooth.ConnectingRequestProfile = BluetoothProfile_SSP;
+    else Sim80x.Bluetooth.ConnectingRequestProfile = BluetoothProfile_NotSet;
   }
   //##################################################  
   str1 = strstr(strStart,"\r\n+BTDISCONN:");
   if(str1!=NULL)
   {
-    Sim80x.Bluetooth.ConnectedID=0;
-    Sim80x.Bluetooth.ConnectedProfile=BluetoothProfile_NotSet;
+    Sim80x.Bluetooth.ConnectedID=0;    
+    memset(Sim80x.Bluetooth.ConnectedProfile,0,sizeof(Sim80x.Bluetooth.ConnectedProfile));
     memset(Sim80x.Bluetooth.ConnectedAddress,0,sizeof(Sim80x.Bluetooth.ConnectedAddress));
     memset(Sim80x.Bluetooth.ConnectedName,0,sizeof(Sim80x.Bluetooth.ConnectedName));    
+    Sim80x.Bluetooth.NeedGetStatus=1;
   }
   //##################################################  
   str1 = strstr(strStart,"\r\n+BTVIS:");
@@ -510,7 +571,17 @@ void  Sim80x_BufferProcess(void)
     Sim80x.Bluetooth.Visibility=atoi(str1);
   }
   //##################################################  
-  
+  str1 = strstr(strStart,"\r\n+BTSPPDATA:");
+  if(str1!=NULL)
+  {
+    str1 = strchr(str1,',');
+    str1++;
+    tmp_int32_t = atoi(str1);
+    str1 = strchr(str1,',');
+    str1++;
+    strncpy(Sim80x.Bluetooth.SPPBuffer,str1,tmp_int32_t);    
+    Sim80x.Bluetooth.SPPLen = tmp_int32_t;
+  }  
   //##################################################  
   
   //##################################################  
@@ -571,6 +642,24 @@ void StartSim80xTask(void const * argument)
   uint8_t UnreadMsgCounter=1;
   while(1)
   {    
+    //###########################################
+    if(Sim80x.Bluetooth.SPPLen >0 )
+    {      
+      Bluetooth_UserNewSppData(Sim80x.Bluetooth.SPPBuffer,Sim80x.Bluetooth.SPPLen);
+      Sim80x.Bluetooth.SPPLen=0;
+    }
+    //###########################################
+    if(Sim80x.Bluetooth.NeedGetStatus==1)
+    {
+      Sim80x.Bluetooth.NeedGetStatus=0;
+      Bluetooth_GetStatus();
+    }    
+    //###########################################
+    if(Sim80x.Bluetooth.ConnectingRequestProfile != BluetoothProfile_NotSet)
+    {
+      Bluetooth_UserConnectingSpp();
+      Sim80x.Bluetooth.ConnectingRequestProfile = BluetoothProfile_NotSet;          
+    }
     //###########################################
     if(Sim80x.Bluetooth.ConnectedID==255)
     {
