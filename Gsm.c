@@ -19,7 +19,10 @@ bool  Gsm_CallAnswer(void)
 {
   uint8_t answer = Sim80x_SendAtCommand("ATA\r\n",20000,2,"ATA\r\r\nOK\r\n","ATA\r\r\nERROR\r\n");
   if(answer == 1)
+  {
+    Sim80x.Gsm.GsmVoiceCallReturn = GsmVoiceCallReturn_IAnswerCall;
     return true;
+  }
   else
     return false;
 }
@@ -28,7 +31,10 @@ bool  Gsm_CallDisconnect(void)
 {
   uint8_t answer = Sim80x_SendAtCommand("AT+HVOIC\r\n",20000,2,"AT+HVOIC\r\r\nOK\r\n","AT+HVOIC\r\r\nERROR\r\n");
   if(answer == 1)
+  {
+    Sim80x.Gsm.GsmVoiceCallReturn = GsmVoiceCallReturn_Idle;
     return true;
+  }
   else
     return false;
 }

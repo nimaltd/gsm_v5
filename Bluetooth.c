@@ -18,14 +18,22 @@ bool  Bluetooth_SetPower(bool TurnOn)
         {
           osDelay(100);
           if(Bluetooth_GetStatus()>BluetoothStatus_Initial)
+          {
+            Bluetooth_GetStatus();
             return true;          
+          }
         }        
       }      
     }
     else if(Sim80x.Bluetooth.Status == BluetoothStatus_Error)
+    {
       return false;
+    }
     else
+    {
+      Bluetooth_GetStatus();
       return true;       
+    }
   }
   else
   {
@@ -34,7 +42,10 @@ bool  Bluetooth_SetPower(bool TurnOn)
       osDelay(100);
       answer = Sim80x_SendAtCommand("AT+BTPOWER=0\r\n",5000,2,"\r\nOK\r\n","\r\nERROR\r\n");
       if(Bluetooth_GetStatus()==BluetoothStatus_Initial)
+      {
+        Bluetooth_GetStatus();
         return true;      
+      }
     }
     return false;     
   }
@@ -155,6 +166,21 @@ bool Bluetooth_Unpair(uint8_t  Unpair_0_to_all)
     return false;    
 }
 //#################################################################################################################
+bool  Bluetooth_GetVisibility(void)
+{
+  uint8_t answer;
+  answer = Sim80x_SendAtCommand("AT+BTVIS?\r\n",1000,2,"\r\nOK\r\n","\r\nERROR\r\n");
+  return Sim80x.Bluetooth.Visibility;
+}
+//#################################################################################################################
+void  Bluetooth_SetVisibility(bool Visible)
+{
+  uint8_t answer;
+  char str[16];
+  snprintf(str,sizeof(str),"AT+BTVIS=%d\r\n",Visible);
+  answer = Sim80x_SendAtCommand(str,1000,2,"\r\nOK\r\n","\r\nERROR\r\n");
+}
+//#################################################################################################################
 
 
 
@@ -162,7 +188,7 @@ bool Bluetooth_Unpair(uint8_t  Unpair_0_to_all)
 
 
 
-
+//#################################################################################################################
 
 
 

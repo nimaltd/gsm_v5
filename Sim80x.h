@@ -21,6 +21,8 @@ typedef enum
   GsmVoiceCallReturn_NoAnswer,
   GsmVoiceCallReturn_Busy,
   GsmVoiceCallReturn_OK,
+  GsmVoiceCallReturn_IAnswerCall,
+  GsmVoiceCallReturn_Ringing,
   
 }GsmVoiceCallReturn_t;
 //######################################################################################################################
@@ -150,6 +152,7 @@ typedef enum
 //######################################################################################################################
 typedef struct
 {
+  uint8_t               Visibility:1;
   BluetoothStatus_t     Status;
   char                  HostName[19];
   char                  HostAddress[19];
@@ -173,6 +176,8 @@ typedef struct
 	uint32_t	            UsartRxLastTime;
   //
   char                  IMEI[16];
+  uint8_t               RingVol;
+  uint8_t               LoadVol;
 	//
   Sim80xStatus_t        Status;
   //
@@ -197,6 +202,11 @@ void				            Sim80x_Init(osPriority Priority);
 void                    Sim80x_SetPower(bool TurnOn);
 void                    Sim80x_SetFactoryDefault(void);
 void                    Sim80x_GetIMEI(char *IMEI);
+uint8_t                 Sim80x_GetRingVol(void);
+bool                    Sim80x_SetRingVol(uint8_t Vol_0_to_100);
+uint8_t                 Sim80x_GetLoadVol(void);
+bool                    Sim80x_SetLoadVol(uint8_t Vol_0_to_100);
+
 //######################################################################################################################
 void                    Gsm_User(uint32_t StartupTime);
 void                    Gsm_UserNewCall(const char *CallerNumber);
@@ -232,4 +242,8 @@ bool                    Bluetooth_AcceptPairWithPass(char *Pass);
 bool                    Bluetooth_SetAutoPair(bool  Enable);
 bool                    Bluetooth_SetPairPassword(char  *Pass);
 bool                    Bluetooth_Unpair(uint8_t  Unpair_0_to_all);  
+bool                    Bluetooth_GetVisibility(void);
+void                    Bluetooth_SetVisibility(bool Visible);
+
+
 #endif

@@ -69,6 +69,27 @@ uint8_t     Sim80x_SendAtCommand(char *AtCommand,int32_t  MaxWaiting_ms,uint8_t 
 //######################################################################################################################
 //######################################################################################################################
 //######################################################################################################################
+void  Sim80x_InitValue(void)
+{
+  Sim80x_SendAtCommand("ATE1\r\n",200,1,"ATE1\r\r\nOK\r\n");
+  Sim80x_SendAtCommand("AT+COLP=1\r\n",200,1,"AT+COLP=1\r\r\nOK\r\n");
+  Sim80x_SendAtCommand("AT+CLIP=1\r\n",200,1,"AT+CLIP=1\r\r\nOK\r\n");
+  Gsm_MsgSetMemoryLocation(GsmMsgMemory_OnModule);
+  Gsm_MsgSetFormat(GsmMsgFormat_Text);
+  Gsm_MsgSetTextModeParameter(17,167,0,0);
+  Gsm_MsgGetCharacterFormat();
+  Gsm_MsgGetFormat();
+  if(Sim80x.Gsm.MsgFormat != GsmMsgFormat_Text)
+    Gsm_MsgSetFormat(GsmMsgFormat_Text);
+  Gsm_MsgGetServiceNumber();
+  Gsm_MsgGetTextModeParameter();
+  Sim80x_GetIMEI(NULL);
+  Sim80x_GetLoadVol();
+  Sim80x_GetRingVol();
+  
+  Bluetooth_SetAutoPair(true);
+}
+//######################################################################################################################
 void  Sim80x_SetPower(bool TurnOn)
 { 
   if(TurnOn==true)
@@ -76,21 +97,7 @@ void  Sim80x_SetPower(bool TurnOn)
     if(Sim80x_SendAtCommand("AT\r\n",200,1,"AT\r\r\nOK\r\n") == 1)
     {
       Sim80x.Status.Power=1;
-      Sim80x_SendAtCommand("ATE1\r\n",200,1,"ATE1\r\r\nOK\r\n");
-      Sim80x_SendAtCommand("AT+COLP=1\r\n",200,1,"AT+COLP=1\r\r\nOK\r\n");
-      Sim80x_SendAtCommand("AT+CLIP=1\r\n",200,1,"AT+CLIP=1\r\r\nOK\r\n");
-      Gsm_MsgSetMemoryLocation(GsmMsgMemory_OnModule);
-      Gsm_MsgSetFormat(GsmMsgFormat_Text);
-      Gsm_MsgSetTextModeParameter(17,167,0,0);
-      Gsm_MsgGetCharacterFormat();
-      Gsm_MsgGetFormat();
-      if(Sim80x.Gsm.MsgFormat != GsmMsgFormat_Text)
-        Gsm_MsgSetFormat(GsmMsgFormat_Text);
-      Gsm_MsgGetServiceNumber();
-      Gsm_MsgGetTextModeParameter();
-      Sim80x_GetIMEI(NULL);
-      
-      Bluetooth_SetAutoPair(true);
+      Sim80x_InitValue();
     }
     else
     {      
@@ -102,21 +109,7 @@ void  Sim80x_SetPower(bool TurnOn)
       {
         osDelay(10000);
         Sim80x.Status.Power=1;
-        Sim80x_SendAtCommand("ATE1\r\n",200,1,"ATE1\r\r\nOK\r\n");
-        Sim80x_SendAtCommand("AT+COLP=1\r\n",200,1,"AT+COLP=1\r\r\nOK\r\n");
-        Sim80x_SendAtCommand("AT+CLIP=1\r\n",200,1,"AT+CLIP=1\r\r\nOK\r\n");
-        Gsm_MsgSetMemoryLocation(GsmMsgMemory_OnModule);
-        Gsm_MsgSetFormat(GsmMsgFormat_Text);
-        Gsm_MsgSetTextModeParameter(17,167,0,0);
-        Gsm_MsgGetCharacterFormat();
-        Gsm_MsgGetFormat();
-        if(Sim80x.Gsm.MsgFormat != GsmMsgFormat_Text)
-          Gsm_MsgSetFormat(GsmMsgFormat_Text);
-        Gsm_MsgGetServiceNumber();
-        Gsm_MsgGetTextModeParameter(); 
-        Sim80x_GetIMEI(NULL);    
-
-        Bluetooth_SetAutoPair(true);        
+        Sim80x_InitValue();   
       }
       else
         Sim80x.Status.Power=0;
@@ -141,15 +134,58 @@ void Sim80x_SetFactoryDefault(void)
 //######################################################################################################################
 void  Sim80x_GetIMEI(char *IMEI)
 {
-  uint8_t answer;
-  answer = Sim80x_SendAtCommand("AT+GSN\r\n",1000,1,"\r\nOK\r\n");
-  
-  
+  Sim80x_SendAtCommand("AT+GSN\r\n",1000,1,"\r\nOK\r\n");
 }
 //######################################################################################################################
-
+uint8_t  Sim80x_GetRingVol(void)
+{
+  uint8_t answer;
+  answer=Sim80x_SendAtCommand("AT+CRSL?\r\n",1000,2,"\r\nOK\r\n","\r\n+CME ERROR:");
+  if(answer==1)
+    return Sim80x.RingVol;
+  else
+    return 0;
+}
 //######################################################################################################################
-
+bool  Sim80x_SetRingVol(uint8_t Vol_0_to_100)
+{
+  uint8_t answer;
+  char str[16];
+  snprintf(str,sizeof(str),"AT+CRSL=%d\r\n",Vol_0_to_100);
+  answer=Sim80x_SendAtCommand(str,1000,2,"\r\nOK\r\n","\r\n+CME ERROR:");
+  if(answer==1)
+  {
+    Sim80x.RingVol=Vol_0_to_100;
+    return true;
+  }
+  else
+    return false;
+}
+//######################################################################################################################
+uint8_t  Sim80x_GetLoadVol(void)
+{
+  uint8_t answer;
+  answer=Sim80x_SendAtCommand("AT+CLVL?\r\n",1000,2,"\r\nOK\r\n","\r\n+CME ERROR:");
+  if(answer==1)
+    return Sim80x.LoadVol;
+  else
+    return 0;  
+}
+//######################################################################################################################
+bool  Sim80x_SetLoadVol(uint8_t Vol_0_to_100)
+{
+  uint8_t answer;
+  char str[16];
+  snprintf(str,sizeof(str),"AT+CLVL=%d\r\n",Vol_0_to_100);
+  answer=Sim80x_SendAtCommand(str,1000,2,"\r\nOK\r\n","\r\n+CME ERROR:");
+  if(answer==1)
+  {
+    Sim80x.LoadVol=Vol_0_to_100;
+    return true;
+  }
+  else
+    return false;
+}
 //######################################################################################################################
 
 //######################################################################################################################
@@ -299,6 +335,22 @@ void  Sim80x_BufferProcess(void)
     }    
   }
   //################################################## 
+  str1 = strstr(strStart,"\r\n+CRSL:");
+  if(str1!=NULL)
+  {
+    str1 = strchr(str1,':');
+    str1++;
+    Sim80x.RingVol = atoi(str1);    
+  }
+  //################################################## 
+  str1 = strstr(strStart,"\r\n+CLVL:");
+  if(str1!=NULL)
+  {
+    str1 = strchr(str1,':');
+    str1++;
+    Sim80x.LoadVol = atoi(str1);    
+  }
+  //################################################## 
   str1 = strstr(strStart,"\r\n+CMTI:");
   if(str1!=NULL)
   {
@@ -375,7 +427,24 @@ void  Sim80x_BufferProcess(void)
     str2 = strstr(str1,"\r\nC:");
     if((str2 != NULL) && (str2 <str3) && (str2 > str1))
     {
-      tmp_int32_t = sscanf(str2,"\r\nC: %d,%[^,]%[^,]%[^\r]",(int*)&Sim80x.Bluetooth.ConnectedID,Sim80x.Bluetooth.ConnectedName,Sim80x.Bluetooth.ConnectedAddress,tmp_str);       
+      tmp_int32_t = sscanf(str2,"\r\nC: %d,%[^,],%[^,],%[^\r]",(int*)&Sim80x.Bluetooth.ConnectedID,Sim80x.Bluetooth.ConnectedName,Sim80x.Bluetooth.ConnectedAddress,tmp_str);       
+      if(strcmp(tmp_str,"\"HFP\"")==0)
+        Sim80x.Bluetooth.ConnectedProfile = BluetoothProfile_HSP_HFP;
+      else if(strcmp(tmp_str,"\"HSP\"")==0)
+        Sim80x.Bluetooth.ConnectedProfile = BluetoothProfile_HSP_HFP;
+      else if(strcmp(tmp_str,"\"A2DP\"")==0)
+        Sim80x.Bluetooth.ConnectedProfile = BluetoothProfile_A2DP;
+      else if(strcmp(tmp_str,"\"GAP\"")==0)
+        Sim80x.Bluetooth.ConnectedProfile = BluetoothProfile_GAP;
+      else if(strcmp(tmp_str,"\"GOEP\"")==0)
+        Sim80x.Bluetooth.ConnectedProfile = BluetoothProfile_GOEP;
+      else if(strcmp(tmp_str,"\"OPP\"")==0)
+        Sim80x.Bluetooth.ConnectedProfile = BluetoothProfile_OPP;
+      else if(strcmp(tmp_str,"\"SDAP\"")==0)
+        Sim80x.Bluetooth.ConnectedProfile = BluetoothProfile_SDAP;
+      else if(strcmp(tmp_str,"\"SSP\"")==0)
+        Sim80x.Bluetooth.ConnectedProfile = BluetoothProfile_SSP;
+      else Sim80x.Bluetooth.ConnectedProfile = BluetoothProfile_NotSet;
     }    
   }  
   //##################################################  
@@ -432,6 +501,22 @@ void  Sim80x_BufferProcess(void)
     memset(Sim80x.Bluetooth.ConnectedAddress,0,sizeof(Sim80x.Bluetooth.ConnectedAddress));
     memset(Sim80x.Bluetooth.ConnectedName,0,sizeof(Sim80x.Bluetooth.ConnectedName));    
   }
+  //##################################################  
+  str1 = strstr(strStart,"\r\n+BTVIS:");
+  if(str1!=NULL)
+  {
+    str1 = strchr(str1,':');
+    str1++;
+    Sim80x.Bluetooth.Visibility=atoi(str1);
+  }
+  //##################################################  
+  
+  //##################################################  
+  
+  //##################################################  
+  
+  //##################################################  
+  
   //##################################################  
   
   //##################################################  
@@ -516,6 +601,7 @@ void StartSim80xTask(void const * argument)
     //###########################################
     if(Sim80x.Gsm.HaveNewCall == 1)
     {
+      Sim80x.Gsm.GsmVoiceCallReturn = GsmVoiceCallReturn_Ringing;
       Sim80x.Gsm.HaveNewCall = 0;
       Gsm_UserNewCall(Sim80x.Gsm.CallerNumber);     
     }    
