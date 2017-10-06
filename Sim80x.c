@@ -196,9 +196,75 @@ bool  Sim80x_SetLoadVol(uint8_t Vol_0_to_100)
     return false;
 }
 //######################################################################################################################
-
+Sim80xWave_t   Sim80x_WaveGetState(void)
+{
+  Sim80x_SendAtCommand("AT+CREC?\r\n",1000,1,"\r\n+CREC:");
+  return Sim80x.WaveState;
+}
 //######################################################################################################################
-
+bool  Sim80x_WaveRecord(uint8_t ID_1_to_10,uint8_t TimeLimitInSecond)
+{
+  uint8_t answer;
+  char str[32];
+  snprintf(str,sizeof(str),"AT+CREC=1,%d,0,%d\r\n",ID_1_to_10,TimeLimitInSecond);
+  answer = Sim80x_SendAtCommand(str,1000,1,"\r\nOK\r\n");
+  if(answer == 1)
+  {
+    Sim80x.WaveState = Sim80xWave_Recording;
+    return true;
+  }
+  else
+  {
+    Sim80x.WaveState = Sim80xWave_Idle;
+    return false;
+  }  
+}
+//######################################################################################################################
+bool  Sim80x_WavePlay(uint8_t ID_1_to_10)
+{
+  uint8_t answer;
+  char str[32];
+  snprintf(str,sizeof(str),"AT+CREC=4,%d,0,%d\r\n",ID_1_to_10,Sim80x.LoadVol);
+  answer = Sim80x_SendAtCommand(str,1000,1,"\r\nOK\r\n");
+  if(answer == 1)
+  {
+    Sim80x.WaveState = Sim80xWave_Playing;
+    return true;
+  }
+  else
+  {
+    Sim80x.WaveState = Sim80xWave_Idle;
+    return false;
+  }   
+}
+//######################################################################################################################
+bool  Sim80x_WaveStop(void)
+{
+  uint8_t answer;
+  answer = Sim80x_SendAtCommand("AT+CREC=2\r\n",1000,1,"\r\nOK\r\n");
+  if(answer == 1)
+  {
+    Sim80x.WaveState = Sim80xWave_Idle;
+    return true;
+  }
+  else
+  {
+    return false;
+  }   
+}
+//######################################################################################################################
+bool  Sim80x_WaveDelete(uint8_t ID_1_to_10)
+{
+  uint8_t answer;
+  char str[32];
+  snprintf(str,sizeof(str),"AT+CREC=3,%d\r\n",ID_1_to_10);
+  answer = Sim80x_SendAtCommand(str,1000,1,"\r\nOK\r\n");
+  if(answer == 1)
+    return true;
+  else
+    return false;
+}
+//######################################################################################################################
 
 //######################################################################################################################
 void	Sim80x_Init(osPriority Priority)
@@ -402,7 +468,13 @@ void  Sim80x_BufferProcess(void)
     sscanf(str1,"\nAT+GSN\r\r\n%[^\r]",Sim80x.IMEI);    
   }
   //##################################################  
-  
+  str1 = strstr(strStart,"\r\n+CREC: ");
+  if(str1!=NULL)
+  {
+    str1 = strchr(str1,':');
+    str1++;
+    Sim80x.WaveState = (Sim80xWave_t)atoi(str1);
+  }
   //##################################################  
   
   
@@ -642,6 +714,8 @@ void StartSim80xTask(void const * argument)
   uint8_t UnreadMsgCounter=1;
   while(1)
   {    
+    //###########################################
+  
     //###########################################
     if(Sim80x.Bluetooth.SPPLen >0 )
     {      

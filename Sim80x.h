@@ -14,6 +14,14 @@
 //######################################################################################################################
 typedef enum
 {
+  Sim80xWave_Idle=0,
+  Sim80xWave_Recording,
+  Sim80xWave_Playing,
+  
+}Sim80xWave_t;
+//######################################################################################################################
+typedef enum
+{
   GsmVoiceCallReturn_Idle,
   GsmVoiceCallReturn_Error,
   GsmVoiceCallReturn_NoDialTone,
@@ -178,6 +186,8 @@ typedef struct
 	uint8_t		            UsartRxBuffer[_SIM80X_BUFFER_SIZE];
 	uint32_t	            UsartRxLastTime;
   //
+  Sim80xWave_t          WaveState;
+  //
   char                  IMEI[16];
   uint8_t               RingVol;
   uint8_t               LoadVol;
@@ -210,7 +220,11 @@ uint8_t                 Sim80x_GetRingVol(void);
 bool                    Sim80x_SetRingVol(uint8_t Vol_0_to_100);
 uint8_t                 Sim80x_GetLoadVol(void);
 bool                    Sim80x_SetLoadVol(uint8_t Vol_0_to_100);
-
+Sim80xWave_t            Sim80x_WaveGetState(void);
+bool                    Sim80x_WaveRecord(uint8_t ID_1_to_10,uint8_t TimeLimitInSecond);  
+bool                    Sim80x_WavePlay(uint8_t ID_1_to_10);  
+bool                    Sim80x_WaveStop(void);  
+bool                    Sim80x_WaveDelete(uint8_t ID_1_to_10);
 //######################################################################################################################
 void                    Gsm_User(uint32_t StartupTime);
 void                    Gsm_UserNewCall(const char *CallerNumber);
