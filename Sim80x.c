@@ -12,20 +12,31 @@ void 	        StartSim80xBuffTask(void const * argument);
 //######################################################################################################################
 void	Sim80x_SendString(char *str)
 {
-	while(_SIM80X_USART.gState != HAL_UART_STATE_READY)
+  #if (_SIM80X_DMA_TRANSMIT==1)
+	while(_SIM80X_USART.hdmatx->State != HAL_DMA_STATE_READY)
 		osDelay(10);
 	HAL_UART_Transmit_DMA(&_SIM80X_USART,(uint8_t*)str,strlen(str));
-	while(_SIM80X_USART.gState != HAL_UART_STATE_READY)
+	while(_SIM80X_USART.hdmatx->State != HAL_DMA_STATE_READY)
 		osDelay(10);
+  #else
+ 	HAL_UART_Transmit(&_SIM80X_USART,(uint8_t*)str,strlen(str),100);
+  osDelay(10);
+  #endif
 }
 //######################################################################################################################
 void  Sim80x_SendRaw(uint8_t *Data,uint16_t len)
 {
-	while(_SIM80X_USART.gState != HAL_UART_STATE_READY)
+  #if (_SIM80X_DMA_TRANSMIT==1)
+	while(_SIM80X_USART.hdmatx->State != HAL_DMA_STATE_READY)
 		osDelay(10);
 	HAL_UART_Transmit_DMA(&_SIM80X_USART,Data,len);
-	while(_SIM80X_USART.gState != HAL_UART_STATE_READY)
+	while(_SIM80X_USART.hdmatx->State != HAL_DMA_STATE_READY)
 		osDelay(10);
+  #else
+	HAL_UART_Transmit(&_SIM80X_USART,Data,len,100);
+  osDelay(10);
+  #endif
+
 }
 //######################################################################################################################
 void	Sim80x_RxCallBack(void)

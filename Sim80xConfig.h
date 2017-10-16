@@ -12,4 +12,6 @@
 
 #define	_SIM80X_BUFFER_SIZE			    512
 
+#define _SIM80X_DMA_TRANSMIT        1
+
 #endif
