@@ -1,6 +1,6 @@
 #include "Sim80x.h"
 
-
+#if (_SIM80X_USE_BLUETOOTH==1)
 //#################################################################################################################
 bool  Bluetooth_SetPower(bool TurnOn)
 {
@@ -211,4 +211,4 @@ bool  Bluetooth_SppSend(char *DataString)
 
 
 
-
+#endif

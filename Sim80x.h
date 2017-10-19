@@ -103,6 +103,7 @@ typedef struct
 //######################################################################################################################
 typedef struct
 {
+  uint8_t               DataTransferMode:1;
   uint8_t               Busy:1;
   uint8_t               Power:1;
   uint8_t               SmsReady:1;  
@@ -178,6 +179,16 @@ typedef struct
 //######################################################################################################################
 typedef struct
 {
+  uint8_t               MultiConnection:1;
+  char                  APN[17];
+  char                  APN_UserName[17];
+  char                  APN_Password[17];
+  char                  LocalIP[17];  
+  
+}GPRS_t;
+//######################################################################################################################
+typedef struct
+{
   uint32_t              BufferStartTime;
   uint8_t               BufferExeTime;
   
@@ -198,8 +209,14 @@ typedef struct
   //
   Sim80xGsm_t           Gsm;
   //
+  #if (_SIM80X_USE_BLUETOOTH==1)
   Sim80xBluetooth_t     Bluetooth;
-	
+  #endif
+	//
+  #if (_SIM80X_USE_GPRS==1)
+  GPRS_t                GPRS;
+  #endif
+  
 }Sim80x_t;
 //######################################################################################################################
 
@@ -211,6 +228,7 @@ void	                  Sim80x_SendString(char *str);
 void                    Sim80x_SendRaw(uint8_t *Data,uint16_t len);
 uint8_t                 Sim80x_SendAtCommand(char *AtCommand,int32_t  MaxWaiting_ms,uint8_t HowMuchAnswers,...);
 //######################################################################################################################
+void                    Sim80x_UserInit(void);
 void				            Sim80x_RxCallBack(void);
 void				            Sim80x_Init(osPriority Priority);
 void                    Sim80x_SetPower(bool TurnOn);
@@ -266,6 +284,18 @@ bool                    Bluetooth_GetVisibility(void);
 void                    Bluetooth_SetVisibility(bool Visible);
 void                    Bluetooth_SppAllowConnection(bool Accept);
 bool                    Bluetooth_SppSend(char *DataString);
+//######################################################################################################################
+bool                    GPRS_DeactivatePDPContext(void);
+bool                    GPRS_GetAPN(char *Name,char *username,char *password);
+bool                    GPRS_SetAPN(char *Name,char *username,char *password);
+bool                    GPRS_StartUpGPRS(void);
+void                    GPRS_GetLocalIP(char *IP);
+void                    GPRS_GetCurrentConnectionStatus(void);
+bool                    GPRS_GetMultiConnection(void);
+bool                    GPRS_SetMultiConnection(bool Enable);
 
+
+bool                    GPRS_ConnectToNetwork(char *Name,char *username,char *password,bool EnableMultiConnection);
+//######################################################################################################################
 
 #endif

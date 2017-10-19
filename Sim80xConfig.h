@@ -14,4 +14,7 @@
 
 #define _SIM80X_DMA_TRANSMIT        1
 
+#define _SIM80X_USE_BLUETOOTH       1
+#define _SIM80X_USE_GPRS            1
+
 #endif
