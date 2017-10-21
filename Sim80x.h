@@ -92,7 +92,7 @@ typedef enum
 //######################################################################################################################
 typedef struct
 {
-  char                  SendCommand[64];
+  char                  SendCommand[128];
   char                  ReceiveAnswer[10][64];
   uint32_t              SendCommandStartTime;
   uint32_t              ReceiveAnswerExeTime;
@@ -103,6 +103,7 @@ typedef struct
 //######################################################################################################################
 typedef struct
 {
+  uint8_t               RegisterdToNetwork;
   uint8_t               DataTransferMode:1;
   uint8_t               Busy:1;
   uint8_t               Power:1;
@@ -177,13 +178,55 @@ typedef struct
   
 }Sim80xBluetooth_t;
 //######################################################################################################################
+typedef enum
+{
+  GPRSConnection_Idle=0,
+  GPRSConnection_AlreadyConnect,
+  GPRSConnection_ConnectOK,
+  GPRSConnection_ConnectFail,    
+  
+}GPRSConnection_t;
+//######################################################################################################################
+typedef enum
+{
+  GPRSSendData_Idle=0,
+  GPRSSendData_SendOK,
+  GPRSSendData_SendFail,
+  
+}GPRSSendData_t;
+//######################################################################################################################
+typedef enum
+{
+  GPRSHttpMethod_GET=0,
+  GPRSHttpMethod_POST=1,
+  GPRSHttpMethod_HEAD=2,
+  GPRSHttpMethod_DELETE=3,
+  
+}GPRSHttpMethod_t;
+//######################################################################################################################
+typedef struct 
+{
+  uint8_t                 CopyToBuffer;
+  GPRSHttpMethod_t        Method;
+  uint16_t                ResultCode;
+  uint32_t                DataLen;
+  uint32_t                TransferStartAddress;
+  uint16_t                TransferDataLen;
+  char                    Data[256];
+  
+}GPRSHttpAction_t;
+//######################################################################################################################
 typedef struct
 {
   uint8_t               MultiConnection:1;
   char                  APN[17];
   char                  APN_UserName[17];
   char                  APN_Password[17];
-  char                  LocalIP[17];  
+  char                  LocalIP[17]; 
+  GPRSConnection_t      Connection[5];
+  GPRSSendData_t        SendStatus[5];
+  
+  GPRSHttpAction_t      HttpAction;  
   
 }GPRS_t;
 //######################################################################################################################
@@ -295,7 +338,10 @@ bool                    GPRS_GetMultiConnection(void);
 bool                    GPRS_SetMultiConnection(bool Enable);
 
 
+void                    GPRS_UserHttpGetAnswer(char *data,uint32_t StartAddress,uint16_t dataLen);
 bool                    GPRS_ConnectToNetwork(char *Name,char *username,char *password,bool EnableMultiConnection);
+bool                    GPRS_HttpGet(char *URL);
+
 //######################################################################################################################
 
 #endif

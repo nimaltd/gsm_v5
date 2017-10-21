@@ -116,7 +116,7 @@ void  Sim80x_InitValue(void)
   #if (_SIM80X_USE_BLUETOOTH==1)
   Bluetooth_SetAutoPair(true);
   #endif
-  
+  Sim80x_SendAtCommand("AT+CREG?\r\n",200,1,"\r\n+CREG:");  
   Sim80x_UserInit();
 }
 //######################################################################################################################
@@ -126,6 +126,7 @@ void  Sim80x_SetPower(bool TurnOn)
   {    
     if(Sim80x_SendAtCommand("AT\r\n",200,1,"AT\r\r\nOK\r\n") == 1)
     {
+      osDelay(100);
       #if (_SIM80X_DEBUG==1)
       printf("\r\nSim80x_SetPower(ON) ---> OK\r\n");
       #endif
@@ -394,7 +395,16 @@ void  Sim80x_BufferProcess(void)
   //##################################################
   //+++       Buffer Process
   //##################################################
- 
+  str1 = strstr(strStart,"\r\n+CREG:");
+  if(str1!=NULL)
+  {
+    str1 = strchr(str1,',');
+    str1++;
+    if(atoi(str1)==1)
+      Sim80x.Status.RegisterdToNetwork=1;
+    else
+      Sim80x.Status.RegisterdToNetwork=0;
+  }
   //##################################################
   str1 = strstr(strStart,"\r\nCall Ready\r\n");
   if(str1!=NULL)
@@ -846,25 +856,83 @@ void  Sim80x_BufferProcess(void)
       Sim80x.GPRS.MultiConnection=1;
   } 
   //##################################################  
-  str1 = strstr(strStart,"\r\n+");
+  str1 = strstr(strStart,"\r\nCONNECT OK\r\n");
   if(str1!=NULL)
   {
-    
-  } 
-  //##################################################  
-  str1 = strstr(strStart,"\r\n+");
-  if(str1!=NULL)
-  {
-    
-  } 
-  //##################################################  
-  str1 = strstr(strStart,"\r\n+");
-  if(str1!=NULL)
-  {
-    
-  } 
-  
+    if(Sim80x.GPRS.MultiConnection==0)
+    {
+      Sim80x.GPRS.Connection[0] = GPRSConnection_ConnectOK;      
+    }
+    else
+    {
 
+    }   
+  } 
+  //##################################################  
+  str1 = strstr(strStart,"\r\nCONNECT FAIL\r\n");
+  if(str1!=NULL)
+  {
+    if(Sim80x.GPRS.MultiConnection==0)
+    {
+      Sim80x.GPRS.Connection[0] = GPRSConnection_ConnectFail;      
+    }
+    else
+    {
+
+    }   
+  } 
+  //##################################################  
+  str1 = strstr(strStart,"\r\nALREADY CONNECT\r\n");
+  if(str1!=NULL)
+  {
+    if(Sim80x.GPRS.MultiConnection==0)
+    {
+      Sim80x.GPRS.Connection[0] = GPRSConnection_AlreadyConnect;      
+    }
+    else
+    {
+
+    }   
+  } 
+  //##################################################  
+  str1 = strstr(strStart,"\r\nSEND OK\r\n");
+  if(str1!=NULL)
+  {
+    if(Sim80x.GPRS.MultiConnection==0)
+    {
+      Sim80x.GPRS.SendStatus[0] = GPRSSendData_SendOK;      
+    }
+    else
+    {
+
+    }   
+  } 
+  //##################################################  
+  str1 = strstr(strStart,"\r\n+HTTPACTION:");
+  if(str1!=NULL)
+  {
+    str1 = strchr(str1,':');
+    str1++;
+    Sim80x.GPRS.HttpAction.Method=(GPRSHttpMethod_t)atoi(str1);
+    str1 = strchr(str1,',');
+    str1++;
+    Sim80x.GPRS.HttpAction.ResultCode = atoi(str1);
+    str1 = strchr(str1,',');
+    str1++;
+    Sim80x.GPRS.HttpAction.DataLen = atoi(str1);    
+  } 
+  //##################################################  
+  str1 = strstr(strStart,"\r\n+HTTPREAD:");
+  if(str1!=NULL)
+  {
+    str1 = strchr(str1,':');
+    str1++;
+    Sim80x.GPRS.HttpAction.TransferDataLen = atoi(str1);
+    str1 = strchr(str1,'\n');
+    str1++;
+    strncpy(Sim80x.GPRS.HttpAction.Data,str1,Sim80x.GPRS.HttpAction.TransferDataLen);
+    Sim80x.GPRS.HttpAction.CopyToBuffer=1;
+  }
   //##################################################    
   #endif  
   //##################################################  
@@ -956,7 +1024,8 @@ void StartSim80xTask(void const * argument)
     //###########################################
     if(HAL_GetTick()-TimeForSlowRunGPRS > 5000)
     {
-      GPRS_GetCurrentConnectionStatus();
+      
+      
       TimeForSlowRunGPRS=HAL_GetTick();
     }
     
@@ -997,7 +1066,8 @@ void StartSim80xTask(void const * argument)
     if(HAL_GetTick() - TimeForSlowRun > 20000)
     {
       Sim80x_SendAtCommand("AT+CSQ\r\n",200,1,"\r\n+CSQ:");  
-      Sim80x_SendAtCommand("AT+CBC\r\n",200,1,"\r\n+CBC:");  
+      Sim80x_SendAtCommand("AT+CBC\r\n",200,1,"\r\n+CBC:"); 
+      Sim80x_SendAtCommand("AT+CREG?\r\n",200,1,"\r\n+CREG:");  
       Gsm_MsgGetMemoryStatus();      
       TimeForSlowRun=HAL_GetTick();
     }
