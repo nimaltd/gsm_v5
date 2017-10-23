@@ -134,10 +134,12 @@ void  Sim80x_SetPower(bool TurnOn)
       Sim80x_InitValue();
     }
     else
-    {      
+    {     
+      #if (_SIM80X_USE_POWER_KEY==1)  
       HAL_GPIO_WritePin(_SIM80X_POWER_KEY_GPIO,_SIM80X_POWER_KEY_PIN,GPIO_PIN_RESET);
       osDelay(1200);
       HAL_GPIO_WritePin(_SIM80X_POWER_KEY_GPIO,_SIM80X_POWER_KEY_PIN,GPIO_PIN_SET);
+      #endif
       osDelay(3000);  
       if(Sim80x_SendAtCommand("AT\r\n",200,1,"AT\r\r\nOK\r\n") == 1)
       {
@@ -160,9 +162,14 @@ void  Sim80x_SetPower(bool TurnOn)
       printf("\r\nSim80x_SetPower(OFF) ---> OK\r\n");
       #endif
       Sim80x.Status.Power=0;
+      #if (_SIM80X_USE_POWER_KEY==1) 
       HAL_GPIO_WritePin(_SIM80X_POWER_KEY_GPIO,_SIM80X_POWER_KEY_PIN,GPIO_PIN_RESET);
       osDelay(1200);
       HAL_GPIO_WritePin(_SIM80X_POWER_KEY_GPIO,_SIM80X_POWER_KEY_PIN,GPIO_PIN_SET);
+      #endif
+      #if (_SIM80X_USE_POWER_KEY==0)
+      Sim80x_SendAtCommand("AT+CPOWD=1\r\n",2000,1,"\r\nOK\r\n"); 
+      #endif      
     }
   }  
 }
@@ -373,7 +380,9 @@ bool  Sim80x_WaveDelete(uint8_t ID_1_to_10)
 //######################################################################################################################
 void	Sim80x_Init(osPriority Priority)
 {
+  #if (_SIM80X_USE_POWER_KEY==1)  
   HAL_GPIO_WritePin(_SIM80X_POWER_KEY_GPIO,_SIM80X_POWER_KEY_PIN,GPIO_PIN_SET);
+  #endif
 	Sim80x.UsartRxLastTime=0;
 	Sim80x.UsartRxIndex=0;
 	memset(Sim80x.UsartRxBuffer,0,_SIM80X_BUFFER_SIZE);
