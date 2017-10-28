@@ -114,6 +114,7 @@ void  Sim80x_InitValue(void)
   Sim80x_GetLoadVol();
   Sim80x_GetRingVol();
   Sim80x_GetMicGain();
+  Sim80x_GetToneVol();
   #if (_SIM80X_USE_BLUETOOTH==1)
   Bluetooth_SetAutoPair(true);
   #endif
@@ -387,7 +388,8 @@ bool  Sim80x_SetMicGain(uint8_t Channel_0_to_4,uint8_t Gain_0_to_15)
   {
     #if (_SIM80X_DEBUG==1)
     printf("\r\Sim80x_SetMicGain(%d,%d) ---> OK\r\n",Channel_0_to_4,Gain_0_to_15);
-    #endif     
+    #endif  
+    Sim80x_GetMicGain();    
     return true;
   }
   else
@@ -417,6 +419,93 @@ bool  Sim80x_GetMicGain(void)
     #endif      
     return 0;  
   }  
+}
+//######################################################################################################################
+bool  Sim80x_TonePlay(Sim80xTone_t Sim80xTone,uint32_t  Time_ms)
+{
+  uint8_t answer;
+  char str[32];
+  snprintf(str,sizeof(str),"AT+STTONE=1,%d,%d\r\n",Sim80xTone,Time_ms);
+  answer = Sim80x_SendAtCommand(str,1000,2,"\r\nOK\r\n","\r\n+CME ERROR\r\n");
+  if(answer == 1)
+  {
+    #if (_SIM80X_DEBUG==1)
+    printf("\r\Sim80x_TonePlay(%d,%d) ---> OK\r\n",Sim80xTone,Time_ms);
+    #endif     
+    return true;
+  }
+  else
+  {
+    #if (_SIM80X_DEBUG==1)
+    printf("\r\Sim80x_TonePlay() ---> ERROR\r\n");
+    #endif     
+    return false;
+  }     
+}
+//######################################################################################################################
+bool  Sim80x_ToneStop(void)
+{
+  uint8_t answer;
+  answer=Sim80x_SendAtCommand("AT+STTONE=0\r\n",1000,2,"\r\nOK\r\n","\r\n+CME ERROR:");
+  if(answer==1)
+  {
+    #if (_SIM80X_DEBUG==1)
+    printf("\r\Sim80x_ToneStop() <--- OK\r\n"); 
+    #endif    
+    return true;
+  }
+  else
+  {
+    #if (_SIM80X_DEBUG==1)
+    printf("\r\Sim80x_ToneStop() <--- ERROR\r\n");
+    #endif      
+    return false;  
+  }  
+}
+//######################################################################################################################
+uint8_t Sim80x_GetToneVol(void)
+{
+  uint8_t answer;
+  answer=Sim80x_SendAtCommand("AT+SNDLEVEL?\r\n",1000,2,"\r\nOK\r\n","\r\n+CME ERROR:");
+  if(answer==1)
+  {
+    #if (_SIM80X_DEBUG==1)
+    printf("\r\Sim80x_GetToneVol(%d) <--- OK\r\n",Sim80x.ToneVol);   
+    #endif    
+    return Sim80x.ToneVol;
+  }
+  else
+  {
+    #if (_SIM80X_DEBUG==1)
+    printf("\r\Sim80x_GetToneVol() <--- ERROR\r\n");
+    #endif      
+    return 0;  
+  }  
+  
+}
+//######################################################################################################################
+bool  Sim80x_SetToneVol(uint8_t Vol_0_to_100)
+{
+  uint8_t answer;
+  char str[32];
+  snprintf(str,sizeof(str),"AT+SNDLEVEL=0,%d\r\n",Vol_0_to_100);
+  answer = Sim80x_SendAtCommand(str,1000,2,"\r\nOK\r\n","\r\n+CME ERROR\r\n");
+  if(answer == 1)
+  {
+    #if (_SIM80X_DEBUG==1)
+    printf("\r\Sim80x_SetToneVol(%d) ---> OK\r\n",Vol_0_to_100);
+    #endif 
+    Sim80x_GetToneVol();    
+    return true;
+  }
+  else
+  {
+    #if (_SIM80X_DEBUG==1)
+    printf("\r\Sim80x_SetToneVol(%d) ---> ERROR\r\n",Vol_0_to_100);
+    #endif     
+    return false;
+  }     
+  
 }
 //######################################################################################################################
 //######################################################################################################################
@@ -620,8 +709,7 @@ void  Sim80x_BufferProcess(void)
   str1 = strstr(strStart,"\r\n+CSMP:");
   if(str1!=NULL)
   {
-    tmp_int32_t = sscanf(str1,"\r\n+CSMP: %d,%d,%d,%d\r\nOK\r\n",(int*)&Sim80x.Gsm.MsgTextModeParameterFo,(int*)&Sim80x.Gsm.MsgTextModeParameterVp,(int*)&Sim80x.Gsm.MsgTextModeParameterPid,(int*)&Sim80x.Gsm.MsgTextModeParameterDcs);
-    
+    tmp_int32_t = sscanf(str1,"\r\n+CSMP: %hhd,%hhd,%hhd,%hhd\r\nOK\r\n",&Sim80x.Gsm.MsgTextModeParameterFo,&Sim80x.Gsm.MsgTextModeParameterVp,&Sim80x.Gsm.MsgTextModeParameterPid,&Sim80x.Gsm.MsgTextModeParameterDcs);
   }
   //##################################################  
   str1 = strstr(strStart,"\r\n+CUSD:");
@@ -683,7 +771,29 @@ void  Sim80x_BufferProcess(void)
     }    
   }  
   //##################################################  
-  
+  str1 = strstr(strStart,"\r\n+SNDLEVEL:");
+  if(str1!=NULL)
+  {
+    while(strchr(str1,'(')!=NULL)
+    {
+      str1 = strchr(str1,'(');
+      str1++;
+      tmp_int32_t = atoi(str1);
+      switch(tmp_int32_t)
+      {
+        case 0:
+          str1 = strchr(str1,',');
+          str1++;
+          Sim80x.ToneVol = atoi(str1);
+        break;        
+        case 1:
+          str1 = strchr(str1,',');
+          str1++;
+          // ...        
+        break;        
+      }
+    }
+  }
   //##################################################  
   
   //##################################################  
@@ -715,7 +825,7 @@ void  Sim80x_BufferProcess(void)
     str2 = strstr(str1,"\r\nC:");
     if((str2 != NULL) && (str2 <str3) && (str2 > str1))
     {
-      tmp_int32_t = sscanf(str2,"\r\nC: %d,%[^,],%[^,],%[^\r]",(int*)&Sim80x.Bluetooth.ConnectedID,Sim80x.Bluetooth.ConnectedName,Sim80x.Bluetooth.ConnectedAddress,tmp_str);       
+      tmp_int32_t = sscanf(str2,"\r\nC: %hhd,%[^,],%[^,],%[^\r]",&Sim80x.Bluetooth.ConnectedID,Sim80x.Bluetooth.ConnectedName,Sim80x.Bluetooth.ConnectedAddress,tmp_str);       
       if(strcmp(tmp_str,"\"HFP\"")==0)
         tmp_int32_t = BluetoothProfile_HSP_HFP;
       else if(strcmp(tmp_str,"\"HSP\"")==0)
@@ -772,7 +882,7 @@ void  Sim80x_BufferProcess(void)
     Sim80x.Bluetooth.ConnectedID=0;
     memset(Sim80x.Bluetooth.ConnectedAddress,0,sizeof(Sim80x.Bluetooth.ConnectedAddress));
     memset(Sim80x.Bluetooth.ConnectedName,0,sizeof(Sim80x.Bluetooth.ConnectedName));
-    tmp_int32_t = sscanf(str1,"\r\n+BTCONNECT: %d,\"%[^\"]\",%[^,],%[^\r]",(int*)&Sim80x.Bluetooth.ConnectedID,Sim80x.Bluetooth.ConnectedName,Sim80x.Bluetooth.ConnectedAddress,tmp_str);
+    tmp_int32_t = sscanf(str1,"\r\n+BTCONNECT: %hhd,\"%[^\"]\",%[^,],%[^\r]",&Sim80x.Bluetooth.ConnectedID,Sim80x.Bluetooth.ConnectedName,Sim80x.Bluetooth.ConnectedAddress,tmp_str);
     if(strcmp(tmp_str,"\"HFP\"")==0)
       tmp_int32_t = BluetoothProfile_HSP_HFP;
     else if(strcmp(tmp_str,"\"HSP\"")==0)

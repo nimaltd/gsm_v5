@@ -14,6 +14,24 @@
 //######################################################################################################################
 typedef enum
 {
+  Sim80xTone_DialTone=1,
+  Sim80xTone_CalledSubscriberBusy=2,
+  Sim80xTone_Congestion=3,
+  Sim80xTone_RadioPathAcknowledge=4,
+  Sim80xTone_RadioPathNotAvailable_CallDropped=5,
+  Sim80xTone_Error_SpecialInformation=6,
+  Sim80xTone_CallWaitingTone=7,
+  Sim80xTone_RingingTone=8,
+  Sim80xTone_GeneralBeep=16,
+  Sim80xTone_PositiveAcknowledgementTone=17,
+  Sim80xTone_NegativeAcknowledgementOrErrorTone=18,
+  Sim80xTone_IndianDialTone=19,
+  Sim80xTone_AmericanDialTone=20,
+  
+}Sim80xTone_t;
+//######################################################################################################################
+typedef enum
+{
   Sim80xWave_Idle=0,
   Sim80xWave_Recording,
   Sim80xWave_Playing,
@@ -249,6 +267,7 @@ typedef struct
   uint8_t               MicGainAux;
   uint8_t               MicGainMainHandsfree;
   uint8_t               MicGainAuxHandsfree;
+  uint8_t               ToneVol;
 	//
   Sim80xStatus_t        Status;
   //
@@ -292,6 +311,10 @@ bool                    Sim80x_WaveStop(void);
 bool                    Sim80x_WaveDelete(uint8_t ID_1_to_10);
 bool                    Sim80x_SetMicGain(uint8_t Channel_0_to_4,uint8_t Gain_0_to_15);
 bool                    Sim80x_GetMicGain(void);
+bool                    Sim80x_TonePlay(Sim80xTone_t Sim80xTone,uint32_t  Time_ms);
+bool                    Sim80x_ToneStop(void);
+uint8_t                 Sim80x_GetToneVol(void);
+bool                    Sim80x_SetToneVol(uint8_t Vol_0_to_100);
 //######################################################################################################################
 void                    Gsm_User(uint32_t StartupTime);
 void                    Gsm_UserNewCall(const char *CallerNumber);
