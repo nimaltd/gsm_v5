@@ -113,6 +113,7 @@ void  Sim80x_InitValue(void)
   Sim80x_GetIMEI(NULL);
   Sim80x_GetLoadVol();
   Sim80x_GetRingVol();
+  Sim80x_GetMicGain();
   #if (_SIM80X_USE_BLUETOOTH==1)
   Bluetooth_SetAutoPair(true);
   #endif
@@ -123,7 +124,7 @@ void  Sim80x_InitValue(void)
 void  Sim80x_SetPower(bool TurnOn)
 { 
   if(TurnOn==true)
-  {    
+  {  
     if(Sim80x_SendAtCommand("AT\r\n",200,1,"AT\r\r\nOK\r\n") == 1)
     {
       osDelay(100);
@@ -376,12 +377,56 @@ bool  Sim80x_WaveDelete(uint8_t ID_1_to_10)
   }
 }
 //######################################################################################################################
-
+bool  Sim80x_SetMicGain(uint8_t Channel_0_to_4,uint8_t Gain_0_to_15)
+{
+   uint8_t answer;
+  char str[32];
+  snprintf(str,sizeof(str),"AT+CMIC=%d,%d\r\n",Channel_0_to_4,Gain_0_to_15);
+  answer = Sim80x_SendAtCommand(str,1000,1,"\r\nOK\r\n");
+  if(answer == 1)
+  {
+    #if (_SIM80X_DEBUG==1)
+    printf("\r\Sim80x_SetMicGain(%d,%d) ---> OK\r\n",Channel_0_to_4,Gain_0_to_15);
+    #endif     
+    return true;
+  }
+  else
+  {
+    #if (_SIM80X_DEBUG==1)
+    printf("\r\Sim80x_SetMicGain(%d,%d) ---> ERROR\r\n",Channel_0_to_4,Gain_0_to_15);
+    #endif     
+    return false;
+  }  
+}
+//######################################################################################################################
+bool  Sim80x_GetMicGain(void)
+{
+  uint8_t answer;
+  answer=Sim80x_SendAtCommand("AT+CMIC?\r\n",1000,2,"\r\nOK\r\n","\r\n+CME ERROR:");
+  if(answer==1)
+  {
+    #if (_SIM80X_DEBUG==1)
+    printf("\r\nSim80x_GetMicGain(%d,%d,%d,%d) <--- OK\r\n",Sim80x.MicGainMain,Sim80x.MicGainAux,Sim80x.MicGainMainHandsfree,Sim80x.MicGainAuxHandsfree);   
+    #endif    
+    return Sim80x.LoadVol;
+  }
+  else
+  {
+    #if (_SIM80X_DEBUG==1)
+    printf("\r\Sim80x_GetMicGain() <--- ERROR\r\n");
+    #endif      
+    return 0;  
+  }  
+}
+//######################################################################################################################
+//######################################################################################################################
 //######################################################################################################################
 void	Sim80x_Init(osPriority Priority)
 {
   #if (_SIM80X_USE_POWER_KEY==1)  
   HAL_GPIO_WritePin(_SIM80X_POWER_KEY_GPIO,_SIM80X_POWER_KEY_PIN,GPIO_PIN_SET);
+  #else
+  osDelay(1000);
   #endif
 	Sim80x.UsartRxLastTime=0;
 	Sim80x.UsartRxIndex=0;
@@ -391,6 +436,12 @@ void	Sim80x_Init(osPriority Priority)
   Sim80xTaskHandle = osThreadCreate(osThread(Sim80xTask), NULL);
   osThreadDef(Sim80xBuffTask, StartSim80xBuffTask, Priority, 0, 256);
   Sim80xBuffTaskHandle = osThreadCreate(osThread(Sim80xBuffTask), NULL);
+  for(uint8_t i=0 ;i<50 ;i++)  
+  {
+    if(Sim80x_SendAtCommand("AT\r\n",200,1,"AT\r\r\nOK\r\n") == 1)
+      break;
+    osDelay(200);
+  }
   osDelay(3000);  
   Sim80x_SetPower(true); 
 }
@@ -473,25 +524,25 @@ void  Sim80x_BufferProcess(void)
   str1 = strstr(strStart,"\r\nBUSY\r\n");
   if(str1!=NULL)
   {
-    Sim80x.Gsm.GsmVoiceCallReturn=GsmVoiceCallReturn_Busy;   
+    Sim80x.Gsm.GsmVoiceStatus=GsmVoiceStatus_ReturnBusy;
   }
   //##################################################
   str1 = strstr(strStart,"\r\nNO DIALTONE\r\n");
   if(str1!=NULL)
   {
-    Sim80x.Gsm.GsmVoiceCallReturn=GsmVoiceCallReturn_NoDialTone;
+    Sim80x.Gsm.GsmVoiceStatus=GsmVoiceStatus_ReturnNoDialTone;
   }
   //##################################################
   str1 = strstr(strStart,"\r\nNO CARRIER\r\n");
   if(str1!=NULL)
   {
-    Sim80x.Gsm.GsmVoiceCallReturn=GsmVoiceCallReturn_NoCarrier;
+    Sim80x.Gsm.GsmVoiceStatus=GsmVoiceStatus_ReturnNoCarrier;
   }
   //##################################################
   str1 = strstr(strStart,"\r\nNO ANSWER\r\n");
   if(str1!=NULL)
   {
-    Sim80x.Gsm.GsmVoiceCallReturn=GsmVoiceCallReturn_NoAnswer;
+    Sim80x.Gsm.GsmVoiceStatus=GsmVoiceStatus_ReturnNoAnswer;
   }
   //##################################################  
   str1 = strstr(strStart,"\r\n+CPMS:");
@@ -598,8 +649,39 @@ void  Sim80x_BufferProcess(void)
     Sim80x.WaveState = (Sim80xWave_t)atoi(str1);
   }
   //##################################################  
-  
-  
+  str1 = strstr(strStart,"\r\n+CMIC: ");
+  if(str1!=NULL)
+  {
+    while(strchr(str1,'(')!=NULL)
+    {
+      str1 = strchr(str1,'(');
+      str1++;
+      tmp_int32_t = atoi(str1);
+      switch(tmp_int32_t)
+      {
+        case 0:
+          str1 = strchr(str1,',');
+          str1++;
+          Sim80x.MicGainMain = atoi(str1);
+        break;        
+        case 1:
+          str1 = strchr(str1,',');
+          str1++;
+          Sim80x.MicGainAux = atoi(str1);
+        break;        
+        case 2:
+          str1 = strchr(str1,',');
+          str1++;
+          Sim80x.MicGainMainHandsfree = atoi(str1);
+        break;        
+        case 3:
+          str1 = strchr(str1,',');
+          str1++;
+          Sim80x.MicGainAuxHandsfree = atoi(str1);
+        break;        
+      }
+    }    
+  }  
   //##################################################  
   
   //##################################################  
@@ -1067,7 +1149,7 @@ void StartSim80xTask(void const * argument)
     //###########################################
     if(Sim80x.Gsm.HaveNewCall == 1)
     {
-      Sim80x.Gsm.GsmVoiceCallReturn = GsmVoiceCallReturn_Ringing;
+      Sim80x.Gsm.GsmVoiceStatus = GsmVoiceStatus_Ringing;
       Sim80x.Gsm.HaveNewCall = 0;
       Gsm_UserNewCall(Sim80x.Gsm.CallerNumber);     
     }    

@@ -17,10 +17,10 @@ bool  Gsm_Ussd(char *send,char *receive)
 //######################################################################################################
 bool  Gsm_CallAnswer(void)
 {
-  uint8_t answer = Sim80x_SendAtCommand("ATA\r\n",20000,2,"ATA\r\r\nOK\r\n","ATA\r\r\nERROR\r\n");
+  uint8_t answer = Sim80x_SendAtCommand("ATA\r\n",20000,2,"\r\nOK\r\n","\r\nERROR\r\n");
   if(answer == 1)
   {
-    Sim80x.Gsm.GsmVoiceCallReturn = GsmVoiceCallReturn_IAnswerCall;
+    Sim80x.Gsm.GsmVoiceStatus = GsmVoiceStatus_IAnswerCall;
     return true;
   }
   else
@@ -32,17 +32,17 @@ bool  Gsm_CallDisconnect(void)
   uint8_t answer = Sim80x_SendAtCommand("AT+HVOIC\r\n",20000,2,"AT+HVOIC\r\r\nOK\r\n","AT+HVOIC\r\r\nERROR\r\n");
   if(answer == 1)
   {
-    Sim80x.Gsm.GsmVoiceCallReturn = GsmVoiceCallReturn_Idle;
+    Sim80x.Gsm.GsmVoiceStatus = GsmVoiceStatus_Idle;
     return true;
   }
   else
     return false;
 }
 //######################################################################################################
-GsmVoiceCallReturn_t     Gsm_Dial(char *Number,uint8_t WaitForAnswer_second)
+GsmVoiceStatus_t     Gsm_Dial(char *Number,uint8_t WaitForAnswer_second)
 {
   char str[24];
-  Sim80x.Gsm.GsmVoiceCallReturn=GsmVoiceCallReturn_Idle;
+  Sim80x.Gsm.GsmVoiceStatus=GsmVoiceStatus_Idle;
   snprintf(Sim80x.Gsm.DiallingNumber,sizeof(Sim80x.Gsm.DiallingNumber),"%s",Number);
   snprintf(str,sizeof(str),"ATD%s;\r\n",Number);
   uint8_t answer=Sim80x_SendAtCommand(str,WaitForAnswer_second*1000,5,"\r\n+COLP:","\r\nBUSY\r\n","\r\nNO DIALTONE\r\n","\r\nNO CARRIER\r\n","\r\nNO ANSWER\r\n");
@@ -50,27 +50,27 @@ GsmVoiceCallReturn_t     Gsm_Dial(char *Number,uint8_t WaitForAnswer_second)
   {
     case 0:
       Gsm_CallDisconnect();
-      Sim80x.Gsm.GsmVoiceCallReturn=GsmVoiceCallReturn_Error;    
-      return Sim80x.Gsm.GsmVoiceCallReturn;    
+      Sim80x.Gsm.GsmVoiceStatus=GsmVoiceStatus_ReturnError;    
+      return Sim80x.Gsm.GsmVoiceStatus;    
     case 1:
-      Sim80x.Gsm.GsmVoiceCallReturn=GsmVoiceCallReturn_OK;
-      return Sim80x.Gsm.GsmVoiceCallReturn;
+      Sim80x.Gsm.GsmVoiceStatus=GsmVoiceStatus_ReturnOK;
+      return Sim80x.Gsm.GsmVoiceStatus;
     case 2:
-      Sim80x.Gsm.GsmVoiceCallReturn=GsmVoiceCallReturn_Busy;
-      return Sim80x.Gsm.GsmVoiceCallReturn;
+      Sim80x.Gsm.GsmVoiceStatus=GsmVoiceStatus_ReturnBusy;
+      return Sim80x.Gsm.GsmVoiceStatus;
     case 3:
-      Sim80x.Gsm.GsmVoiceCallReturn=GsmVoiceCallReturn_NoDialTone;
-      return Sim80x.Gsm.GsmVoiceCallReturn;
+      Sim80x.Gsm.GsmVoiceStatus=GsmVoiceStatus_ReturnNoDialTone;
+      return Sim80x.Gsm.GsmVoiceStatus;
     case 4:
-      Sim80x.Gsm.GsmVoiceCallReturn=GsmVoiceCallReturn_NoCarrier;
-      return Sim80x.Gsm.GsmVoiceCallReturn;
+      Sim80x.Gsm.GsmVoiceStatus=GsmVoiceStatus_ReturnNoCarrier;
+      return Sim80x.Gsm.GsmVoiceStatus;
     case 5:
-      Sim80x.Gsm.GsmVoiceCallReturn=GsmVoiceCallReturn_NoAnswer;
-      return Sim80x.Gsm.GsmVoiceCallReturn;
+      Sim80x.Gsm.GsmVoiceStatus=GsmVoiceStatus_ReturnNoAnswer;
+      return Sim80x.Gsm.GsmVoiceStatus;
   }      
   Gsm_CallDisconnect();
-  Sim80x.Gsm.GsmVoiceCallReturn=GsmVoiceCallReturn_Error;
-  return Sim80x.Gsm.GsmVoiceCallReturn;    
+  Sim80x.Gsm.GsmVoiceStatus=GsmVoiceStatus_ReturnError;
+  return Sim80x.Gsm.GsmVoiceStatus;    
 }
 //######################################################################################################
 

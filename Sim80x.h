@@ -22,17 +22,17 @@ typedef enum
 //######################################################################################################################
 typedef enum
 {
-  GsmVoiceCallReturn_Idle,
-  GsmVoiceCallReturn_Error,
-  GsmVoiceCallReturn_NoDialTone,
-  GsmVoiceCallReturn_NoCarrier,
-  GsmVoiceCallReturn_NoAnswer,
-  GsmVoiceCallReturn_Busy,
-  GsmVoiceCallReturn_OK,
-  GsmVoiceCallReturn_IAnswerCall,
-  GsmVoiceCallReturn_Ringing,
+  GsmVoiceStatus_Idle,
+  GsmVoiceStatus_ReturnError,
+  GsmVoiceStatus_ReturnNoDialTone,
+  GsmVoiceStatus_ReturnNoCarrier,
+  GsmVoiceStatus_ReturnNoAnswer,
+  GsmVoiceStatus_ReturnBusy,
+  GsmVoiceStatus_ReturnOK,
+  GsmVoiceStatus_IAnswerCall,
+  GsmVoiceStatus_Ringing,
   
-}GsmVoiceCallReturn_t;
+}GsmVoiceStatus_t;
 //######################################################################################################################
 typedef enum
 {
@@ -122,9 +122,9 @@ typedef struct
 typedef struct
 {
   uint8_t               HaveNewCall:1;
-  uint8_t               MsgReadIsOK:1;
+  uint8_t               MsgReadIsOK:1;  
 
-  GsmVoiceCallReturn_t  GsmVoiceCallReturn;         
+  GsmVoiceStatus_t      GsmVoiceStatus;         
   char                  CallerNumber[16];
   char                  DiallingNumber[16]; 
 
@@ -245,6 +245,10 @@ typedef struct
   char                  IMEI[16];
   uint8_t               RingVol;
   uint8_t               LoadVol;
+  uint8_t               MicGainMain;
+  uint8_t               MicGainAux;
+  uint8_t               MicGainMainHandsfree;
+  uint8_t               MicGainAuxHandsfree;
 	//
   Sim80xStatus_t        Status;
   //
@@ -286,6 +290,8 @@ bool                    Sim80x_WaveRecord(uint8_t ID_1_to_10,uint8_t TimeLimitIn
 bool                    Sim80x_WavePlay(uint8_t ID_1_to_10);  
 bool                    Sim80x_WaveStop(void);  
 bool                    Sim80x_WaveDelete(uint8_t ID_1_to_10);
+bool                    Sim80x_SetMicGain(uint8_t Channel_0_to_4,uint8_t Gain_0_to_15);
+bool                    Sim80x_GetMicGain(void);
 //######################################################################################################################
 void                    Gsm_User(uint32_t StartupTime);
 void                    Gsm_UserNewCall(const char *CallerNumber);
@@ -295,7 +301,7 @@ bool                    Gsm_Ussd(char *send,char *receive);
 
 bool                    Gsm_CallAnswer(void);
 bool                    Gsm_CallDisconnect(void);
-GsmVoiceCallReturn_t    Gsm_Dial(char *Number,uint8_t WaitForAnswer_second); 
+GsmVoiceStatus_t        Gsm_Dial(char *Number,uint8_t WaitForAnswer_second); 
 
 GsmMsgFormat_t          Gsm_MsgGetFormat(void);
 bool                    Gsm_MsgSetFormat(GsmMsgFormat_t GsmMsgFormat);  
