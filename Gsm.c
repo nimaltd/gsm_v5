@@ -216,7 +216,7 @@ bool  Gsm_MsgRead(uint8_t index)
   uint8_t answer;
   char str[16];
   sprintf(str,"AT+CMGR=%d\r\n",index);
-  answer = Sim80x_SendAtCommand(str,5000,1,"\r\nOK\r\n");
+  answer = Sim80x_SendAtCommand(str,5000,2,"\r\nOK\r\n","\r\nERROR\r\n");
   if((answer == 1 ) && (Sim80x.Gsm.MsgReadIsOK==1))
     return true;
   else

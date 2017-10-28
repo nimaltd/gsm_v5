@@ -1236,17 +1236,6 @@ void StartSim80xTask(void const * argument)
     //###########################################
     #endif
     //###########################################
-    if(Sim80x.Gsm.MsgUsed > 0)
-    {
-      if(Gsm_MsgRead(UnreadMsgCounter)==true)
-        Gsm_UserNewMsg(Sim80x.Gsm.MsgNumber,Sim80x.Gsm.MsgDate,Sim80x.Gsm.MsgTime,Sim80x.Gsm.Msg);
-      Gsm_MsgDelete(UnreadMsgCounter);
-      Gsm_MsgGetMemoryStatus();
-      UnreadMsgCounter++;
-      if(UnreadMsgCounter==150)
-        UnreadMsgCounter=1;
-    }
-    //###########################################
     if(Sim80x.Gsm.HaveNewMsg > 0)
     {
       Gsm_MsgGetMemoryStatus();
@@ -1255,6 +1244,19 @@ void StartSim80xTask(void const * argument)
       Gsm_MsgDelete(Sim80x.Gsm.HaveNewMsg);
       Gsm_MsgGetMemoryStatus();  
       Sim80x.Gsm.HaveNewMsg=0;
+    }
+    //###########################################
+    if(Sim80x.Gsm.MsgUsed > 0)
+    {   
+      if(Gsm_MsgRead(UnreadMsgCounter)==true)
+      {
+        Gsm_UserNewMsg(Sim80x.Gsm.MsgNumber,Sim80x.Gsm.MsgDate,Sim80x.Gsm.MsgTime,Sim80x.Gsm.Msg);
+        Gsm_MsgDelete(UnreadMsgCounter);
+        Gsm_MsgGetMemoryStatus();
+      }
+      UnreadMsgCounter++;
+      if(UnreadMsgCounter==150)
+        UnreadMsgCounter=0;      
     }
     //###########################################
     if(Sim80x.Gsm.HaveNewCall == 1)
