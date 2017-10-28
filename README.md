@@ -23,5 +23,5 @@ PowerKey connect to Sim800 Power Key.(if Needed,See Sim80xConfig.h)
 <br />
 7) call  Sim80x_Init(osPriorityLow) on your app.
 <br />
-8) Config your app on GsmUser.c and BlutoothUser.c.
+8) Config your app on Sim80xUser.c,GsmUser.c,BlutoothUser.c,GprsUser.c.
 
