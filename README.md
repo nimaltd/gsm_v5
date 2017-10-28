@@ -9,7 +9,7 @@ Please Do This ...
 <br />
 1) Enable FreeRTOS  
 <br />
-2) Config your usart and enable RX interrupt and TX DMA on CubeMX (115200 bps )
+2) Config your usart and enable RX interrupt and TX DMA on CubeMX
 <br />
 3) One control Pin needed. (PowerKey>>>>output,open drain,default to SET) 
 <br />
