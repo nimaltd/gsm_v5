@@ -46,9 +46,10 @@ typedef enum
   GsmVoiceStatus_ReturnNoCarrier,
   GsmVoiceStatus_ReturnNoAnswer,
   GsmVoiceStatus_ReturnBusy,
-  GsmVoiceStatus_ReturnOK,
-  GsmVoiceStatus_IAnswerCall,
+  GsmVoiceStatus_IAnswerTheCall,
+  GsmVoiceStatus_MyCallAnswerd,
   GsmVoiceStatus_Ringing,
+  GsmVoiceStatus_Calling,
   
 }GsmVoiceStatus_t;
 //######################################################################################################################
@@ -161,7 +162,7 @@ typedef struct
   GsmMsgFormat_t        MsgFormat;
   uint8_t               MsgCapacity;
   uint8_t               MsgUsed;
-  uint8_t               HaveNewMsg;  
+  uint8_t               HaveNewMsg[10];  
   
 }Sim80xGsm_t;
 //######################################################################################################################
@@ -325,7 +326,7 @@ bool                    Gsm_Ussd(char *send,char *receive);
 bool                    Gsm_CallAnswer(void);
 bool                    Gsm_CallDisconnect(void);
 GsmVoiceStatus_t        Gsm_Dial(char *Number,uint8_t WaitForAnswer_second); 
-
+GsmVoiceStatus_t        Gsm_GetLastVoiceActivity(void);
 GsmMsgFormat_t          Gsm_MsgGetFormat(void);
 bool                    Gsm_MsgSetFormat(GsmMsgFormat_t GsmMsgFormat);  
 GsmMsgMemory_t          Gsm_MsgGetMemoryStatus(void);

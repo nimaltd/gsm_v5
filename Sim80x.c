@@ -338,7 +338,7 @@ bool  Sim80x_WavePlay(uint8_t ID_1_to_10)
 bool  Sim80x_WaveStop(void)
 {
   uint8_t answer;
-  answer = Sim80x_SendAtCommand("AT+CREC=2\r\n",1000,1,"\r\nOK\r\n");
+  answer = Sim80x_SendAtCommand("AT+CREC=5\r\n",1000,1,"\r\nOK\r\n");
   if(answer == 1)
   {
     #if (_SIM80X_DEBUG==1)
@@ -563,6 +563,12 @@ void  Sim80x_BufferProcess(void)
   if(str1!=NULL)
     Sim80x.Status.SmsReady=1;  
   //##################################################
+  str1 = strstr(strStart,"\r\n+COLP:");
+  if(str1!=NULL)
+  {
+    Sim80x.Gsm.GsmVoiceStatus = GsmVoiceStatus_MyCallAnswerd;
+  }  
+  //##################################################
   str1 = strstr(strStart,"\r\n+CLIP:");
   if(str1!=NULL)
   {
@@ -693,7 +699,14 @@ void  Sim80x_BufferProcess(void)
   {
     str1 = strchr(str1,',');
     str1++;
-    Sim80x.Gsm.HaveNewMsg = atoi(str1);    
+    for(uint8_t i=0 ;i<sizeof(Sim80x.Gsm.HaveNewMsg) ; i++)
+    {
+      if(Sim80x.Gsm.HaveNewMsg[i]==0)
+      {
+        Sim80x.Gsm.HaveNewMsg[i] = atoi(str1);    
+        break;
+      }
+    }
   }
   //##################################################  
   str1 = strstr(strStart,"\r\n+CSCA:");
@@ -1236,15 +1249,20 @@ void StartSim80xTask(void const * argument)
     //###########################################
     #endif
     //###########################################
-    if(Sim80x.Gsm.HaveNewMsg > 0)
+    for(uint8_t i=0 ;i<sizeof(Sim80x.Gsm.HaveNewMsg) ; i++)
     {
-      Gsm_MsgGetMemoryStatus();
-      if(Gsm_MsgRead(Sim80x.Gsm.HaveNewMsg)==true)
-        Gsm_UserNewMsg(Sim80x.Gsm.MsgNumber,Sim80x.Gsm.MsgDate,Sim80x.Gsm.MsgTime,Sim80x.Gsm.Msg);
-      Gsm_MsgDelete(Sim80x.Gsm.HaveNewMsg);
-      Gsm_MsgGetMemoryStatus();  
-      Sim80x.Gsm.HaveNewMsg=0;
-    }
+      if(Sim80x.Gsm.HaveNewMsg[i] > 0)
+      {
+        //Gsm_MsgGetMemoryStatus();        
+        if(Gsm_MsgRead(Sim80x.Gsm.HaveNewMsg[i])==true)
+        {
+          Gsm_UserNewMsg(Sim80x.Gsm.MsgNumber,Sim80x.Gsm.MsgDate,Sim80x.Gsm.MsgTime,Sim80x.Gsm.Msg);
+          Gsm_MsgDelete(Sim80x.Gsm.HaveNewMsg[i]);
+        }
+        Gsm_MsgGetMemoryStatus();  
+        Sim80x.Gsm.HaveNewMsg[i]=0;
+      }        
+    }    
     //###########################################
     if(Sim80x.Gsm.MsgUsed > 0)
     {   

@@ -24,7 +24,7 @@ bool  Gsm_CallAnswer(void)
   uint8_t answer = Sim80x_SendAtCommand("ATA\r\n",20000,2,"\r\nOK\r\n","\r\nERROR\r\n");
   if(answer == 1)
   {
-    Sim80x.Gsm.GsmVoiceStatus = GsmVoiceStatus_IAnswerCall;
+    Sim80x.Gsm.GsmVoiceStatus = GsmVoiceStatus_IAnswerTheCall;
     return true;
   }
   else
@@ -46,46 +46,32 @@ bool  Gsm_CallDisconnect(void)
 GsmVoiceStatus_t     Gsm_Dial(char *Number,uint8_t WaitForAnswer_second)
 {
   char str[24];
-  Sim80x.Gsm.GsmVoiceStatus=GsmVoiceStatus_Idle;
+  uint32_t  wait = WaitForAnswer_second*1000;
+  Sim80x.Gsm.GsmVoiceStatus = GsmVoiceStatus_Calling;
   snprintf(Sim80x.Gsm.DiallingNumber,sizeof(Sim80x.Gsm.DiallingNumber),"%s",Number);
   snprintf(str,sizeof(str),"ATD%s;\r\n",Number);
-  uint8_t answer=Sim80x_SendAtCommand(str,WaitForAnswer_second*1000,5,"\r\n+COLP:","\r\nBUSY\r\n","\r\nNO DIALTONE\r\n","\r\nNO CARRIER\r\n","\r\nNO ANSWER\r\n");
-  switch(answer)
+  Sim80x_SendString(str);
+  while(wait>0)
+  {    
+    if(Sim80x.Gsm.GsmVoiceStatus != GsmVoiceStatus_Calling)
+      return Sim80x.Gsm.GsmVoiceStatus;
+    osDelay(100);
+    wait-=100;
+  } 
+  if(wait==0)
   {
-    case 0:
-      Gsm_CallDisconnect();
-      Sim80x.Gsm.GsmVoiceStatus=GsmVoiceStatus_ReturnError;    
-      return Sim80x.Gsm.GsmVoiceStatus;    
-    case 1:
-      Sim80x.Gsm.GsmVoiceStatus=GsmVoiceStatus_ReturnOK;
-      return Sim80x.Gsm.GsmVoiceStatus;
-    case 2:
-      Sim80x.Gsm.GsmVoiceStatus=GsmVoiceStatus_ReturnBusy;
-      return Sim80x.Gsm.GsmVoiceStatus;
-    case 3:
-      Sim80x.Gsm.GsmVoiceStatus=GsmVoiceStatus_ReturnNoDialTone;
-      return Sim80x.Gsm.GsmVoiceStatus;
-    case 4:
-      Sim80x.Gsm.GsmVoiceStatus=GsmVoiceStatus_ReturnNoCarrier;
-      return Sim80x.Gsm.GsmVoiceStatus;
-    case 5:
-      Sim80x.Gsm.GsmVoiceStatus=GsmVoiceStatus_ReturnNoAnswer;
-      return Sim80x.Gsm.GsmVoiceStatus;
-  }      
-  Gsm_CallDisconnect();
-  Sim80x.Gsm.GsmVoiceStatus=GsmVoiceStatus_ReturnError;
-  return Sim80x.Gsm.GsmVoiceStatus;    
+    Gsm_CallDisconnect();
+    Sim80x.Gsm.GsmVoiceStatus=GsmVoiceStatus_ReturnNoAnswer;
+    return  Sim80x.Gsm.GsmVoiceStatus; 
+  }
+  Sim80x.Gsm.GsmVoiceStatus = GsmVoiceStatus_ReturnError;
+  return Sim80x.Gsm.GsmVoiceStatus;
 }
 //######################################################################################################
-
-
-//######################################################################################################
-
-
-//######################################################################################################
-
-
-
+GsmVoiceStatus_t     Gsm_GetLastVoiceActivity(void)
+{ 
+  return Sim80x.Gsm.GsmVoiceStatus;  
+}
 //######################################################################################################
 //######################################################################################################
 //######################################################################################################
@@ -215,6 +201,10 @@ bool  Gsm_MsgRead(uint8_t index)
 {
   uint8_t answer;
   char str[16];
+  memset(Sim80x.Gsm.Msg,0,sizeof(Sim80x.Gsm.Msg));
+  memset(Sim80x.Gsm.MsgDate,0,sizeof(Sim80x.Gsm.MsgDate));
+  memset(Sim80x.Gsm.MsgNumber,0,sizeof(Sim80x.Gsm.MsgNumber));
+  memset(Sim80x.Gsm.MsgTime,0,sizeof(Sim80x.Gsm.MsgTime));  
   sprintf(str,"AT+CMGR=%d\r\n",index);
   answer = Sim80x_SendAtCommand(str,5000,2,"\r\nOK\r\n","\r\nERROR\r\n");
   if((answer == 1 ) && (Sim80x.Gsm.MsgReadIsOK==1))
