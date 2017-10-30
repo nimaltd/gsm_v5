@@ -122,6 +122,14 @@ void  Sim80x_InitValue(void)
   Sim80x_UserInit();
 }
 //######################################################################################################################
+void   Sim80x_SaveParameters(void)
+{
+  Sim80x_SendAtCommand("AT&W\r\n",1000,1,"AT&W\r\r\nOK\r\n");
+  #if (_SIM80X_DEBUG==1)
+  printf("\r\Sim80x_SaveParameters() ---> OK\r\n");
+  #endif
+}
+//######################################################################################################################
 void  Sim80x_SetPower(bool TurnOn)
 { 
   if(TurnOn==true)
@@ -508,6 +516,30 @@ bool  Sim80x_SetToneVol(uint8_t Vol_0_to_100)
   
 }
 //######################################################################################################################
+bool  Sim80x_SetRingTone(uint8_t Tone_0_to_19,bool Save)
+{
+  uint8_t answer;
+  char str[32];
+  snprintf(str,sizeof(str),"AT+CALS=%d\r\n",Tone_0_to_19);
+  answer = Sim80x_SendAtCommand(str,1000,2,"\r\nOK\r\n","\r\n+CME ERROR\r\n");
+  if(answer == 1)
+  {
+    #if (_SIM80X_DEBUG==1)
+    printf("\r\Sim80x_SetRingTone(%d) ---> OK\r\n",Tone_0_to_19);
+    #endif    
+    if(Save==true)
+      Sim80x_SaveParameters();
+    return true;
+  }
+  else
+  {
+    #if (_SIM80X_DEBUG==1)
+    printf("\r\Sim80x_SetRingTone(%d) ---> ERROR\r\n",Tone_0_to_19);
+    #endif     
+    return false;
+  }       
+} 
+//######################################################################################################################
 //######################################################################################################################
 //######################################################################################################################
 void	Sim80x_Init(osPriority Priority)
@@ -530,8 +562,7 @@ void	Sim80x_Init(osPriority Priority)
     if(Sim80x_SendAtCommand("AT\r\n",200,1,"AT\r\r\nOK\r\n") == 1)
       break;
     osDelay(200);
-  }
-  osDelay(3000);  
+  }  
   Sim80x_SetPower(true); 
 }
 //######################################################################################################################
@@ -639,6 +670,12 @@ void  Sim80x_BufferProcess(void)
   {
     Sim80x.Gsm.GsmVoiceStatus=GsmVoiceStatus_ReturnNoAnswer;
   }
+  //##################################################  
+  str1 = strstr(strStart,"\r\n+CMGS:");
+  if(str1!=NULL)
+  {
+    Sim80x.Gsm.MsgSent=1;
+  }  
   //##################################################  
   str1 = strstr(strStart,"\r\n+CPMS:");
   if(str1!=NULL)

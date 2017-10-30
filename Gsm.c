@@ -280,7 +280,9 @@ bool  Gsm_MsgSetTextModeParameter(uint8_t fo,uint8_t vp,uint8_t pid,uint8_t dcs)
 bool  Gsm_MsgSendText(char *Number,char *msg)
 {
   uint8_t answer;
-  char str[32];
+  uint8_t Timeout=60;
+  char str[128];
+  Sim80x.Gsm.MsgSent=0;
   if(Sim80x.Gsm.MsgFormat != GsmMsgFormat_Text)
     Gsm_MsgSetFormat(GsmMsgFormat_Text);
   snprintf(str,sizeof(str),"AT+CMGS=\"%s\"\r\n",Number);
@@ -288,13 +290,16 @@ bool  Gsm_MsgSendText(char *Number,char *msg)
   if(answer != 1)
     return false;
   strcpy(Sim80x.Gsm.MsgSentNumber,Number);
-  Sim80x_SendString(msg);
-  sprintf(str,"%c",26);
-  answer = Sim80x_SendAtCommand(str,60000,1,"\r\n+CMGS: ");
-  if(answer == 1)
-    return true;
-  else
-    return false;      
+  snprintf(str,sizeof(str),"%s%c",msg,26);
+  Sim80x_SendString(str);
+  while(Timeout>0)
+  {
+    osDelay(1000);
+    Timeout--;
+    if(Sim80x.Gsm.MsgSent == 1)
+      return true;
+  }
+  return false;      
 }
 //######################################################################################################
 

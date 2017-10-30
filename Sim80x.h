@@ -142,6 +142,7 @@ typedef struct
 {
   uint8_t               HaveNewCall:1;
   uint8_t               MsgReadIsOK:1;  
+  uint8_t               MsgSent:1;  
 
   GsmVoiceStatus_t      GsmVoiceStatus;         
   char                  CallerNumber[16];
@@ -298,6 +299,7 @@ uint8_t                 Sim80x_SendAtCommand(char *AtCommand,int32_t  MaxWaiting
 void                    Sim80x_UserInit(void);
 void				            Sim80x_RxCallBack(void);
 void				            Sim80x_Init(osPriority Priority);
+void                    Sim80x_SaveParameters(void);
 void                    Sim80x_SetPower(bool TurnOn);
 void                    Sim80x_SetFactoryDefault(void);
 void                    Sim80x_GetIMEI(char *IMEI);
@@ -316,6 +318,7 @@ bool                    Sim80x_TonePlay(Sim80xTone_t Sim80xTone,uint32_t  Time_m
 bool                    Sim80x_ToneStop(void);
 uint8_t                 Sim80x_GetToneVol(void);
 bool                    Sim80x_SetToneVol(uint8_t Vol_0_to_100);
+bool                    Sim80x_SetRingTone(uint8_t Tone_0_to_19,bool Save);
 //######################################################################################################################
 void                    Gsm_User(uint32_t StartupTime);
 void                    Gsm_UserNewCall(const char *CallerNumber);
