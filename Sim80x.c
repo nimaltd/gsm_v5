@@ -12,6 +12,7 @@ void 	        StartSim80xBuffTask(void const * argument);
 //######################################################################################################################
 void	Sim80x_SendString(char *str)
 {
+  HAL_UART_Receive_IT(&_SIM80X_USART,&Sim80x.UsartRxTemp,1);	
   #if (_SIM80X_DMA_TRANSMIT==1)
 	while(_SIM80X_USART.hdmatx->State != HAL_DMA_STATE_READY)
 		osDelay(10);
@@ -26,6 +27,7 @@ void	Sim80x_SendString(char *str)
 //######################################################################################################################
 void  Sim80x_SendRaw(uint8_t *Data,uint16_t len)
 {
+  HAL_UART_Receive_IT(&_SIM80X_USART,&Sim80x.UsartRxTemp,1);	
   #if (_SIM80X_DMA_TRANSMIT==1)
 	while(_SIM80X_USART.hdmatx->State != HAL_DMA_STATE_READY)
 		osDelay(10);
@@ -549,8 +551,7 @@ void	Sim80x_Init(osPriority Priority)
   #else
   osDelay(1000);
   #endif
-	Sim80x.UsartRxLastTime=0;
-	Sim80x.UsartRxIndex=0;
+	memset(&Sim80x,0,sizeof(Sim80x));
 	memset(Sim80x.UsartRxBuffer,0,_SIM80X_BUFFER_SIZE);
 	HAL_UART_Receive_IT(&_SIM80X_USART,&Sim80x.UsartRxTemp,1);
   osThreadDef(Sim80xTask, StartSim80xTask, Priority, 0, 256);

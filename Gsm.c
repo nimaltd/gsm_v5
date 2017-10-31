@@ -287,8 +287,13 @@ bool  Gsm_MsgSendText(char *Number,char *msg)
     Gsm_MsgSetFormat(GsmMsgFormat_Text);
   snprintf(str,sizeof(str),"AT+CMGS=\"%s\"\r\n",Number);
   answer = Sim80x_SendAtCommand(str,10000,1,"\r\r\n> ");
+  osDelay(100);
   if(answer != 1)
+  {
+    snprintf(str,sizeof(str),"%c",27);
+    Sim80x_SendString(str);
     return false;
+  }
   strcpy(Sim80x.Gsm.MsgSentNumber,Number);
   snprintf(str,sizeof(str),"%s%c",msg,26);
   Sim80x_SendString(str);
