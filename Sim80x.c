@@ -103,6 +103,7 @@ void  Sim80x_InitValue(void)
   Sim80x_SendAtCommand("ATE1\r\n",200,1,"ATE1\r\r\nOK\r\n");
   Sim80x_SendAtCommand("AT+COLP=1\r\n",200,1,"AT+COLP=1\r\r\nOK\r\n");
   Sim80x_SendAtCommand("AT+CLIP=1\r\n",200,1,"AT+CLIP=1\r\r\nOK\r\n");
+  Sim80x_SendAtCommand("AT+FSHEX=0\r\n",200,1,"AT+FSHEX=0\r\r\nOK\r\n");
   Gsm_MsgSetMemoryLocation(GsmMsgMemory_OnModule);
   Gsm_MsgSetFormat(GsmMsgFormat_Text);
   Gsm_MsgSetTextModeParameter(17,167,0,0);
@@ -297,11 +298,11 @@ Sim80xWave_t   Sim80x_WaveGetState(void)
   return Sim80x.WaveState;
 }
 //######################################################################################################################
-bool  Sim80x_WaveRecord(uint8_t ID_1_to_10,uint8_t TimeLimitInSecond)
+bool  Sim80x_WaveRecord(uint8_t ID,uint8_t TimeLimitInSecond)
 {
   uint8_t answer;
   char str[32];
-  snprintf(str,sizeof(str),"AT+CREC=1,%d,0,%d\r\n",ID_1_to_10,TimeLimitInSecond);
+  snprintf(str,sizeof(str),"AT+CREC=1,\"C:\\User\\%d.amr\",0,%d\r\n",ID,TimeLimitInSecond);
   answer = Sim80x_SendAtCommand(str,1000,1,"\r\nOK\r\n");
   if(answer == 1)
   {
@@ -321,11 +322,11 @@ bool  Sim80x_WaveRecord(uint8_t ID_1_to_10,uint8_t TimeLimitInSecond)
   }  
 }
 //######################################################################################################################
-bool  Sim80x_WavePlay(uint8_t ID_1_to_10)
+bool  Sim80x_WavePlay(uint8_t ID)
 {
   uint8_t answer;
   char str[32];
-  snprintf(str,sizeof(str),"AT+CREC=4,%d,0,%d\r\n",ID_1_to_10,Sim80x.LoadVol);
+  snprintf(str,sizeof(str),"AT+CREC=4,\"C:\\User\\%d.amr\",0,%d\r\n",ID,Sim80x.LoadVol);
   answer = Sim80x_SendAtCommand(str,1000,1,"\r\nOK\r\n");
   if(answer == 1)
   {
@@ -366,23 +367,23 @@ bool  Sim80x_WaveStop(void)
   }   
 }
 //######################################################################################################################
-bool  Sim80x_WaveDelete(uint8_t ID_1_to_10)
+bool  Sim80x_WaveDelete(uint8_t ID)
 {
   uint8_t answer;
   char str[32];
-  snprintf(str,sizeof(str),"AT+CREC=3,%d\r\n",ID_1_to_10);
+  snprintf(str,sizeof(str),"AT+CREC=3,\"C:\\User\\%d.amr\"\r\n",ID);
   answer = Sim80x_SendAtCommand(str,1000,1,"\r\nOK\r\n");
   if(answer == 1)
   {
     #if (_SIM80X_DEBUG==1)
-    printf("\r\nSim80x_WaveDelete(%d) ---> OK\r\n",ID_1_to_10);
+    printf("\r\nSim80x_WaveDelete(%d.amr) ---> OK\r\n",ID);
     #endif     
     return true;
   }
   else
   {
     #if (_SIM80X_DEBUG==1)
-    printf("\r\nSim80x_WaveDelete(%d) ---> ERROR\r\n",ID_1_to_10);
+    printf("\r\nSim80x_WaveDelete(%d.amr) ---> ERROR\r\n",ID_1_to_20);
     #endif     
     return false;
   }
