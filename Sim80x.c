@@ -104,6 +104,8 @@ void  Sim80x_InitValue(void)
   Sim80x_SendAtCommand("AT+COLP=1\r\n",200,1,"AT+COLP=1\r\r\nOK\r\n");
   Sim80x_SendAtCommand("AT+CLIP=1\r\n",200,1,"AT+CLIP=1\r\r\nOK\r\n");
   Sim80x_SendAtCommand("AT+FSHEX=0\r\n",200,1,"AT+FSHEX=0\r\r\nOK\r\n");
+  Sim80x_SendAtCommand("AT+CREG=1\r\n",200,1,"AT+CREG=1\r\r\nOK\r\n");
+  Sim80x_SendAtCommand("AT+ECHO?\r\n",200,1,"\r\nOK\r\n");
   Gsm_MsgSetMemoryLocation(GsmMsgMemory_OnModule);
   Gsm_MsgSetFormat(GsmMsgFormat_Text);
   Gsm_MsgSetTextModeParameter(17,167,0,0);
@@ -303,7 +305,7 @@ bool  Sim80x_WaveRecord(uint8_t ID,uint8_t TimeLimitInSecond)
   uint8_t answer;
   char str[32];
   snprintf(str,sizeof(str),"AT+CREC=1,\"C:\\User\\%d.amr\",0,%d\r\n",ID,TimeLimitInSecond);
-  answer = Sim80x_SendAtCommand(str,1000,1,"\r\nOK\r\n");
+  answer = Sim80x_SendAtCommand(str,3000,1,"\r\nOK\r\n");
   if(answer == 1)
   {
     Sim80x.WaveState = Sim80xWave_Recording;
@@ -325,9 +327,9 @@ bool  Sim80x_WaveRecord(uint8_t ID,uint8_t TimeLimitInSecond)
 bool  Sim80x_WavePlay(uint8_t ID)
 {
   uint8_t answer;
-  char str[32];
+  char str[64];
   snprintf(str,sizeof(str),"AT+CREC=4,\"C:\\User\\%d.amr\",0,%d\r\n",ID,Sim80x.LoadVol);
-  answer = Sim80x_SendAtCommand(str,1000,1,"\r\nOK\r\n");
+  answer = Sim80x_SendAtCommand(str,3000,1,"\r\nOK\r\n");
   if(answer == 1)
   {
     #if (_SIM80X_DEBUG==1)
@@ -349,7 +351,7 @@ bool  Sim80x_WavePlay(uint8_t ID)
 bool  Sim80x_WaveStop(void)
 {
   uint8_t answer;
-  answer = Sim80x_SendAtCommand("AT+CREC=5\r\n",1000,1,"\r\nOK\r\n");
+  answer = Sim80x_SendAtCommand("AT+CREC=5\r\n",1000,2,"\r\nOK\r\n","\r\nERROR\r\n");
   if(answer == 1)
   {
     #if (_SIM80X_DEBUG==1)
@@ -543,6 +545,30 @@ bool  Sim80x_SetRingTone(uint8_t Tone_0_to_19,bool Save)
   }       
 } 
 //######################################################################################################################
+bool  Sim80x_SetEchoParameters(uint8_t  SelectMic_0_or_1,uint16_t NonlinearProcessingRemove,uint16_t AcousticEchoCancellation,uint16_t NoiseReduction,uint16_t NoiseSuppression)
+{
+  uint8_t answer;
+  char str[64];
+  snprintf(str,sizeof(str),"AT+ECHO=%d,%d,%d,%d,%d,1\r\n",SelectMic_0_or_1,NonlinearProcessingRemove,AcousticEchoCancellation,NoiseReduction,NoiseSuppression);
+  answer = Sim80x_SendAtCommand(str,1000,2,"\r\nOK\r\n","\r\n+CME ERROR\r\n");
+  if(answer == 1)
+  {
+    #if (_SIM80X_DEBUG==1)
+    printf("\r\Sim80x_SetEchoParameters() ---> OK\r\n");
+    #endif   
+    Sim80x_SendAtCommand("AT+ECHO?\r\n",200,1,"\r\nOK\r\n");    
+    return true;
+  }
+  else
+  {
+    #if (_SIM80X_DEBUG==1)
+    printf("\r\Sim80x_SetEchoParameters() ---> ERROR\r\n");
+    #endif     
+    Sim80x_SendAtCommand("AT+ECHO?\r\n",200,1,"\r\nOK\r\n");
+    return false;
+  }         
+}
+//######################################################################################################################
 //######################################################################################################################
 //######################################################################################################################
 void	Sim80x_Init(osPriority Priority)
@@ -570,7 +596,7 @@ void	Sim80x_Init(osPriority Priority)
 //######################################################################################################################
 void  Sim80x_BufferProcess(void)
 {
-  char      *strStart,*str1,*str2,*str3,tmp_str[16];
+  char      *strStart,*str1,*str2;
   int32_t   tmp_int32_t;
   
   strStart = (char*)&Sim80x.UsartRxBuffer[0];  
@@ -847,7 +873,12 @@ void  Sim80x_BufferProcess(void)
     }
   }
   //##################################################  
-  
+  str1 = strstr(strStart,"\r\n+ECHO: ");
+  if(str1!=NULL)
+  {
+    sscanf(str1,"\r\n+ECHO: (0,%hu,%hu,%hu,%hu),(1,%hu,%hu,%hu,%hu)",&Sim80x.EchoHandset_NonlinearProcessing,&Sim80x.EchoHandset_AcousticEchoCancellation,&Sim80x.EchoHandset_NoiseReduction,&Sim80x.EchoHandset_NoiseSuppression,\
+    &Sim80x.EchoHandfree_NonlinearProcessing,&Sim80x.EchoHandfree_AcousticEchoCancellation,&Sim80x.EchoHandfree_NoiseReduction,&Sim80x.EchoHandfree_NoiseSuppression);
+  }  
   //##################################################  
   
   //##################################################  

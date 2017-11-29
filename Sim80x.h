@@ -260,7 +260,7 @@ typedef struct
 	uint8_t		            UsartRxBuffer[_SIM80X_BUFFER_SIZE];
 	uint32_t	            UsartRxLastTime;
   //
-  Sim80xWave_t          WaveState;
+  Sim80xWave_t          WaveState;    
   //
   char                  IMEI[16];
   uint8_t               RingVol;
@@ -270,6 +270,16 @@ typedef struct
   uint8_t               MicGainMainHandsfree;
   uint8_t               MicGainAuxHandsfree;
   uint8_t               ToneVol;
+  
+  uint16_t              EchoHandset_NonlinearProcessing;
+  uint16_t              EchoHandfree_NonlinearProcessing;
+  uint16_t              EchoHandset_AcousticEchoCancellation;
+  uint16_t              EchoHandfree_AcousticEchoCancellation;
+  uint16_t              EchoHandset_NoiseReduction;
+  uint16_t              EchoHandfree_NoiseReduction;
+  uint16_t              EchoHandset_NoiseSuppression;
+  uint16_t              EchoHandfree_NoiseSuppression;
+
 	//
   Sim80xStatus_t        Status;
   //
@@ -319,6 +329,7 @@ bool                    Sim80x_ToneStop(void);
 uint8_t                 Sim80x_GetToneVol(void);
 bool                    Sim80x_SetToneVol(uint8_t Vol_0_to_100);
 bool                    Sim80x_SetRingTone(uint8_t Tone_0_to_19,bool Save);
+bool                    Sim80x_SetEchoParameters(uint8_t  SelectMic_0_or_1,uint16_t NonlinearProcessingRemove,uint16_t AcousticEchoCancellation,uint16_t NoiseReduction,uint16_t NoiseSuppression);
 //######################################################################################################################
 void                    Gsm_User(uint32_t StartupTime);
 void                    Gsm_UserNewCall(const char *CallerNumber);
