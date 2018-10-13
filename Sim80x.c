@@ -585,7 +585,7 @@ void	Sim80x_Init(osPriority Priority)
   Sim80xTaskHandle = osThreadCreate(osThread(Sim80xTask), NULL);
   osThreadDef(Sim80xBuffTask, StartSim80xBuffTask, Priority, 0, 256);
   Sim80xBuffTaskHandle = osThreadCreate(osThread(Sim80xBuffTask), NULL);
-  for(uint8_t i=0 ;i<50 ;i++)  
+  for(uint8_t i=0 ;i<10 ;i++)  
   {
     if(Sim80x_SendAtCommand("AT\r\n",200,1,"AT\r\r\nOK\r\n") == 1)
       break;
@@ -596,8 +596,9 @@ void	Sim80x_Init(osPriority Priority)
 //######################################################################################################################
 void  Sim80x_BufferProcess(void)
 {
-  char      *strStart,*str1,*str2;
+  char      *strStart,*str1,*str2,*str3;
   int32_t   tmp_int32_t;
+  char      tmp_str[16];
   
   strStart = (char*)&Sim80x.UsartRxBuffer[0];  
   //##################################################
@@ -1326,8 +1327,11 @@ void StartSim80xTask(void const * argument)
         //Gsm_MsgGetMemoryStatus();        
         if(Gsm_MsgRead(Sim80x.Gsm.HaveNewMsg[i])==true)
         {
+					osDelay(100);
           Gsm_UserNewMsg(Sim80x.Gsm.MsgNumber,Sim80x.Gsm.MsgDate,Sim80x.Gsm.MsgTime,Sim80x.Gsm.Msg);
+					osDelay(100);
           Gsm_MsgDelete(Sim80x.Gsm.HaveNewMsg[i]);
+					osDelay(100);
         }
         Gsm_MsgGetMemoryStatus();  
         Sim80x.Gsm.HaveNewMsg[i]=0;
