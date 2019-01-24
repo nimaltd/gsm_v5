@@ -6,17 +6,17 @@ bool  Gsm_Ussd(char *send,char *receive)
 {
   uint8_t answer;
   char str[32];
-  snprintf(str,sizeof(str),"AT+CUSD=1,\"%s\"\r\n",send);
-  memset(Sim80x.Gsm.Msg,0,sizeof(Sim80x.Gsm.Msg));
-  answer = Sim80x_SendAtCommand(str,60000,2,"\r\n+CUSD:","\r\n+CME ERROR:");
-  if((answer == 1) && (Sim80x.Gsm.Msg[0]!=0))
+  
+  snprintf(str, sizeof(str), "AT+CUSD=1,\"%s\"\r\n", send);
+  memset(Sim80x.Gsm.Msg, 0, sizeof(Sim80x.Gsm.Msg));
+  answer = Sim80x_SendAtCommand(str, 60000, 2, "\r\n+CUSD:", "\r\n+CME ERROR:");
+  if((answer == 1) && (Sim80x.Gsm.Msg[0] != 0) && (receive != NULL))
   {
-    if(receive!=NULL)
-      receive = Sim80x.Gsm.Msg;
+    memcpy(receive, Sim80x.Gsm.Msg, strlen(Sim80x.Gsm.Msg));
     return true;
   }
-  else
-    return false;
+
+  return false;
 }
 //######################################################################################################
 bool  Gsm_CallAnswer(void)
