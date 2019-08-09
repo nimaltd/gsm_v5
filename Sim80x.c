@@ -81,7 +81,7 @@ uint8_t     Sim80x_SendAtCommand(char *AtCommand,int32_t  MaxWaiting_ms,uint8_t 
     strncpy(Sim80x.AtCommand.ReceiveAnswer[i],arg[i],sizeof(Sim80x.AtCommand.ReceiveAnswer[0]));
   }
   va_end (tag);		  
-  strncpy(Sim80x.AtCommand.SendCommand,AtCommand,sizeof(Sim80x.AtCommand.SendCommand));            
+  strncpy(Sim80x.AtCommand.SendCommand,AtCommand,sizeof(AtCommand));            
   Sim80x_SendString(Sim80x.AtCommand.SendCommand); 
   while( MaxWaiting_ms > 0)
   {
