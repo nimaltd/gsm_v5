@@ -23,3 +23,28 @@ PowerKey connect to Sim800 Power Key.(if Needed,See Sim80xConfig.h)
 <br />
 8) Config your app on Sim80xUser.c,GsmUser.c,BlutoothUser.c,GprsUser.c.
 
+```
+#include "Sim80x.h"
+.
+.
+.
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+  Sim80x_RxCallBack();
+}
+.
+.
+.
+/* StartDefaultTask function */
+void StartDefaultTask(void const * argument)
+{
+  Sim80x_Init(osPriorityLow);
+  osDelay(10000);
+  Gsm_MsgSendText("+98911xxxxx,"test msg\r\n");
+  for(;;)
+  {
+    osDelay(10);
+  }
+
+
+```
