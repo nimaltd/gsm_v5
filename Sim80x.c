@@ -596,16 +596,18 @@ void	Sim80x_Init(osPriority Priority)
 //######################################################################################################################
 void  Sim80x_BufferProcess(void)
 {
-  char      *strStart,*str1,*str2,*str3;
-  int32_t   tmp_int32_t;
-  char      tmp_str[16];
-  
-  strStart = (char*)&Sim80x.UsartRxBuffer[0];  
+  char *strStart   = NULL;
+  char *str1       = NULL;
+  char *str2       = NULL;
+  char *str3       = NULL;
+  char tmp_str[16] = { 0 };
+  int32_t tmp_int32_t;
+
+  strStart = (char*)&Sim80x.UsartRxBuffer[0];
   //##################################################
   //+++       Buffer Process
   //##################################################
-  str1 = strstr(strStart,"\r\n+CREG:");
-  if(str1!=NULL)
+  if ((str1 = strstr(strStart,"\r\n+CREG:")) != NULL)
   {
     str1 = strchr(str1,',');
     str1++;
@@ -615,40 +617,34 @@ void  Sim80x_BufferProcess(void)
       Sim80x.Status.RegisterdToNetwork=0;
   }
   //##################################################
-  str1 = strstr(strStart,"\r\nCall Ready\r\n");
-  if(str1!=NULL)
-    Sim80x.Status.CallReady=1;  
+  else if ((str1 = strstr(strStart,"\r\nCall Ready\r\n")) != NULL)
+    Sim80x.Status.CallReady=1;
   //##################################################
-  str1 = strstr(strStart,"\r\nSMS Ready\r\n");
-  if(str1!=NULL)
-    Sim80x.Status.SmsReady=1;  
+  else if ((str1 = strstr(strStart,"\r\nSMS Ready\r\n")) != NULL)
+    Sim80x.Status.SmsReady=1;
   //##################################################
-  str1 = strstr(strStart,"\r\n+COLP:");
-  if(str1!=NULL)
+  else if ((str1 = strstr(strStart,"\r\n+COLP:")) != NULL)
   {
     Sim80x.Gsm.GsmVoiceStatus = GsmVoiceStatus_MyCallAnswerd;
-  }  
+  }
   //##################################################
-  str1 = strstr(strStart,"\r\n+CLIP:");
-  if(str1!=NULL)
+  else if ((str1 = strstr(strStart,"\r\n+CLIP:")) != NULL)
   {
     str1 = strchr(str1,'"');
     str1++;
     str2 = strchr(str1,'"');
     strncpy(Sim80x.Gsm.CallerNumber,str1,str2-str1);
-    Sim80x.Gsm.HaveNewCall=1;  
-  }  
+    Sim80x.Gsm.HaveNewCall=1;
+  }
   //##################################################
-  str1 = strstr(strStart,"\r\n+CSQ:");
-  if(str1!=NULL)
+  else if ((str1 = strstr(strStart,"\r\n+CSQ:")) != NULL)
   {
     str1 = strchr(str1,':');
     str1++;
-    Sim80x.Status.Signal = atoi(str1);      
+    Sim80x.Status.Signal = atoi(str1);
   }
   //##################################################
-  str1 = strstr(strStart,"\r\n+CBC:");
-  if(str1!=NULL)
+  else if ((str1 = strstr(strStart,"\r\n+CBC:")) != NULL)
   {
     str1 = strchr(str1,':');
     str1++;
@@ -673,41 +669,34 @@ void  Sim80x_BufferProcess(void)
     Sim80x.Status.BatteryPercent = atoi(str1);
     str1 = strchr(str1,',');
     str1++;
-    Sim80x.Status.BatteryVoltage = atof(str1)/1000;      
+    Sim80x.Status.BatteryVoltage = atof(str1)/1000;
   }
   //##################################################
-  str1 = strstr(strStart,"\r\nBUSY\r\n");
-  if(str1!=NULL)
+  else if ((str1 = strstr(strStart,"\r\nBUSY\r\n")) != NULL)
   {
     Sim80x.Gsm.GsmVoiceStatus=GsmVoiceStatus_ReturnBusy;
   }
   //##################################################
-  str1 = strstr(strStart,"\r\nNO DIALTONE\r\n");
-  if(str1!=NULL)
+  else if ((str1 = strstr(strStart,"\r\nNO DIALTONE\r\n")) !=NULL)
   {
     Sim80x.Gsm.GsmVoiceStatus=GsmVoiceStatus_ReturnNoDialTone;
   }
-  //##################################################
-  str1 = strstr(strStart,"\r\nNO CARRIER\r\n");
-  if(str1!=NULL)
+  else if ((str1 = strstr(strStart,"\r\nNO CARRIER\r\n")) != NULL)
   {
     Sim80x.Gsm.GsmVoiceStatus=GsmVoiceStatus_ReturnNoCarrier;
   }
   //##################################################
-  str1 = strstr(strStart,"\r\nNO ANSWER\r\n");
-  if(str1!=NULL)
+  else if ((str1 = strstr(strStart,"\r\nNO ANSWER\r\n")) != NULL)
   {
     Sim80x.Gsm.GsmVoiceStatus=GsmVoiceStatus_ReturnNoAnswer;
   }
-  //##################################################  
-  str1 = strstr(strStart,"\r\n+CMGS:");
-  if(str1!=NULL)
+  //##################################################
+  else if ((str1 = strstr(strStart,"\r\n+CMGS:")) != NULL)
   {
     Sim80x.Gsm.MsgSent=1;
-  }  
-  //##################################################  
-  str1 = strstr(strStart,"\r\n+CPMS:");
-  if(str1!=NULL)
+  }
+  //##################################################
+  else if ((str1 = strstr(strStart,"\r\n+CPMS:")) != NULL)
   {
     str1 = strchr(str1,':');
     str1++;
@@ -719,12 +708,11 @@ void  Sim80x_BufferProcess(void)
     }
     Sim80x.Gsm.MsgUsed = atoi(str1);
     str1 = strchr(str1,',');
-    str1++;      
+    str1++;
     Sim80x.Gsm.MsgCapacity = atoi(str1);
-  }  
-  //##################################################  
-  str1 = strstr(strStart,"\r\n+CMGR:");
-  if(str1!=NULL)
+  }
+  //##################################################
+  else if ((str1 = strstr(strStart,"\r\n+CMGR:")) != NULL)
   {
     if(Sim80x.Gsm.MsgFormat == GsmMsgFormat_Text)
     {
@@ -732,7 +720,7 @@ void  Sim80x_BufferProcess(void)
       memset(Sim80x.Gsm.MsgDate,0,sizeof(Sim80x.Gsm.MsgDate));
       memset(Sim80x.Gsm.MsgNumber,0,sizeof(Sim80x.Gsm.MsgNumber));
       memset(Sim80x.Gsm.MsgTime,0,sizeof(Sim80x.Gsm.MsgTime));
-      tmp_int32_t = sscanf(str1,"\r\n+CMGR: %*[^,],\"%[^\"]\",%*[^,],\"%[^,],%[^+-]%*d\"\r\n%[^\r]s\r\nOK\r\n",Sim80x.Gsm.MsgNumber,Sim80x.Gsm.MsgDate,Sim80x.Gsm.MsgTime,Sim80x.Gsm.Msg);      
+      tmp_int32_t = sscanf(str1,"\r\n+CMGR: %*[^,],\"%[^\"]\",%*[^,],\"%[^,],%[^+-]%*d\"\r\n%[^\r]s\r\nOK\r\n",Sim80x.Gsm.MsgNumber,Sim80x.Gsm.MsgDate,Sim80x.Gsm.MsgTime,Sim80x.Gsm.Msg);
       if(tmp_int32_t == 4)
         Sim80x.Gsm.MsgReadIsOK=1;
       else
@@ -740,28 +728,25 @@ void  Sim80x_BufferProcess(void)
     }else if(Sim80x.Gsm.MsgFormat == GsmMsgFormat_PDU)
     {
 
-      
-    }    
+
+    }
   }
-  //################################################## 
-  str1 = strstr(strStart,"\r\n+CRSL:");
-  if(str1!=NULL)
+  //##################################################
+  else if ((str1 = strstr(strStart,"\r\n+CRSL:")) != NULL)
   {
     str1 = strchr(str1,':');
     str1++;
-    Sim80x.RingVol = atoi(str1);    
+    Sim80x.RingVol = atoi(str1);
   }
-  //################################################## 
-  str1 = strstr(strStart,"\r\n+CLVL:");
-  if(str1!=NULL)
+  //##################################################
+  else if ((str1 = strstr(strStart,"\r\n+CLVL:")) != NULL)
   {
     str1 = strchr(str1,':');
     str1++;
-    Sim80x.LoadVol = atoi(str1);    
+    Sim80x.LoadVol = atoi(str1);
   }
-  //################################################## 
-  str1 = strstr(strStart,"\r\n+CMTI:");
-  if(str1!=NULL)
+  //##################################################
+  else if ((str1 = strstr(strStart,"\r\n+CMTI:")) != NULL)
   {
     str1 = strchr(str1,',');
     str1++;
@@ -769,55 +754,50 @@ void  Sim80x_BufferProcess(void)
     {
       if(Sim80x.Gsm.HaveNewMsg[i]==0)
       {
-        Sim80x.Gsm.HaveNewMsg[i] = atoi(str1);    
+        Sim80x.Gsm.HaveNewMsg[i] = atoi(str1);
         break;
       }
     }
   }
-  //##################################################  
-  str1 = strstr(strStart,"\r\n+CSCA:");
-  if(str1!=NULL)
+  //##################################################
+  else if ((str1 = strstr(strStart,"\r\n+CSCA:")) != NULL)
   {
     memset(Sim80x.Gsm.MsgServiceNumber,0,sizeof(Sim80x.Gsm.MsgServiceNumber));
     str1 = strchr(str1,'"');
     str1++;
     str2 = strchr(str1,'"');
-    strncpy(Sim80x.Gsm.MsgServiceNumber,str1,str2-str1);
+    strncpy
+    (Sim80x.Gsm.MsgServiceNumber,str1,str2-str1);
   }
-  //##################################################  
-  str1 = strstr(strStart,"\r\n+CSMP:");
-  if(str1!=NULL)
+  //##################################################
+  else if ((str1 = strstr(strStart,"\r\n+CSMP:")) != NULL)
   {
     tmp_int32_t = sscanf(str1,"\r\n+CSMP: %hhd,%hhd,%hhd,%hhd\r\nOK\r\n",&Sim80x.Gsm.MsgTextModeParameterFo,&Sim80x.Gsm.MsgTextModeParameterVp,&Sim80x.Gsm.MsgTextModeParameterPid,&Sim80x.Gsm.MsgTextModeParameterDcs);
   }
-  //##################################################  
-  str1 = strstr(strStart,"\r\n+CUSD:");
-  if(str1!=NULL)
+  //##################################################
+  else if ((str1 = strstr(strStart,"\r\n+CUSD:")) != NULL)
   {
-    sscanf(str1,"\r\n+CUSD: 0, \"%[^\r]s",Sim80x.Gsm.Msg);    
+    sscanf(str1,"\r\n+CUSD: 0, \"%[^\r]s",Sim80x.Gsm.Msg);
     tmp_int32_t = strlen(Sim80x.Gsm.Msg);
     if(tmp_int32_t > 5)
     {
       Sim80x.Gsm.Msg[tmp_int32_t-5] = 0;
     }
   }
-  //##################################################  
-  str1 = strstr(strStart,"\nAT+GSN\r");
-  if(str1!=NULL)
+  //##################################################
+  else if ((str1 = strstr(strStart,"\nAT+GSN\r")) != NULL)
   {
-    sscanf(str1,"\nAT+GSN\r\r\n%[^\r]",Sim80x.IMEI);    
+    sscanf(str1,"\nAT+GSN\r\r\n%[^\r]",Sim80x.IMEI);
   }
-  //##################################################  
-  str1 = strstr(strStart,"\r\n+CREC: ");
-  if(str1!=NULL)
+  //##################################################
+  else if ((str1 = strstr(strStart,"\r\n+CREC: ")) != NULL)
   {
     str1 = strchr(str1,':');
     str1++;
     Sim80x.WaveState = (Sim80xWave_t)atoi(str1);
   }
-  //##################################################  
-  str1 = strstr(strStart,"\r\n+CMIC: ");
-  if(str1!=NULL)
+  //##################################################
+  else if ((str1 = strstr(strStart,"\r\n+CMIC: ")) != NULL)
   {
     while(strchr(str1,'(')!=NULL)
     {
@@ -830,28 +810,27 @@ void  Sim80x_BufferProcess(void)
           str1 = strchr(str1,',');
           str1++;
           Sim80x.MicGainMain = atoi(str1);
-        break;        
+        break;
         case 1:
           str1 = strchr(str1,',');
           str1++;
           Sim80x.MicGainAux = atoi(str1);
-        break;        
+        break;
         case 2:
           str1 = strchr(str1,',');
           str1++;
           Sim80x.MicGainMainHandsfree = atoi(str1);
-        break;        
+        break;
         case 3:
           str1 = strchr(str1,',');
           str1++;
           Sim80x.MicGainAuxHandsfree = atoi(str1);
-        break;        
+        break;
       }
-    }    
-  }  
-  //##################################################  
-  str1 = strstr(strStart,"\r\n+SNDLEVEL:");
-  if(str1!=NULL)
+    }
+  }
+  //##################################################
+  else if ((str1 = strstr(strStart,"\r\n+SNDLEVEL:")) != NULL)
   {
     while(strchr(str1,'(')!=NULL)
     {
@@ -864,52 +843,49 @@ void  Sim80x_BufferProcess(void)
           str1 = strchr(str1,',');
           str1++;
           Sim80x.ToneVol = atoi(str1);
-        break;        
+        break;
         case 1:
           str1 = strchr(str1,',');
           str1++;
-          // ...        
-        break;        
+          // ...
+        break;
       }
     }
   }
-  //##################################################  
-  str1 = strstr(strStart,"\r\n+ECHO: ");
-  if(str1!=NULL)
+  //##################################################
+  else if ((str1 = strstr(strStart,"\r\n+ECHO: ")) != NULL)
   {
     sscanf(str1,"\r\n+ECHO: (0,%hu,%hu,%hu,%hu),(1,%hu,%hu,%hu,%hu)",&Sim80x.EchoHandset_NonlinearProcessing,&Sim80x.EchoHandset_AcousticEchoCancellation,&Sim80x.EchoHandset_NoiseReduction,&Sim80x.EchoHandset_NoiseSuppression,\
     &Sim80x.EchoHandfree_NonlinearProcessing,&Sim80x.EchoHandfree_AcousticEchoCancellation,&Sim80x.EchoHandfree_NoiseReduction,&Sim80x.EchoHandfree_NoiseSuppression);
-  }  
-  //##################################################  
-  
-  //##################################################  
-  
-  //##################################################  
-  
-  //##################################################  
-  //##################################################   
-  //################################################## 
-  #if( _SIM80X_USE_BLUETOOTH==1)  
-  //################################################## 
-  str1 = strstr(strStart,"\r\n+BTHOST:");
-  if(str1!=NULL)
+  }
+  //##################################################
+
+  //##################################################
+
+  //##################################################
+
+  //##################################################
+  //##################################################
+  //##################################################
+  #if( _SIM80X_USE_BLUETOOTH==1)
+  //##################################################
+  if ((str1 = strstr(strStart,"\r\n+BTHOST:")) != NULL)
   {
-    sscanf(str1,"\r\n+BTHOST: %[^,],%[^\r]",Sim80x.Bluetooth.HostName,Sim80x.Bluetooth.HostAddress);    
-  }  
-  //##################################################  
-  str1 = strstr(strStart,"\r\n+BTSTATUS:");
-  if(str1!=NULL)
+    sscanf(str1,"\r\n+BTHOST: %[^,],%[^\r]",Sim80x.Bluetooth.HostName,Sim80x.Bluetooth.HostAddress);
+  }
+  //##################################################
+  else if ((str1 = strstr(strStart,"\r\n+BTSTATUS:")) != NULL)
   {
     str1 = strchr(str1,':');
     str1++;
     Sim80x.Bluetooth.Status = (BluetoothStatus_t)atoi(str1);
-    
+
     str3 = strstr(str1,"\r\nOK\r\n");
     CheckAnotherConnectedProfile:
     str2 = strstr(str1,"\r\nC:");
     if((str2 != NULL) && (str2 <str3) && (str2 > str1))
     {
-      tmp_int32_t = sscanf(str2,"\r\nC: %hhd,%[^,],%[^,],%[^\r]",&Sim80x.Bluetooth.ConnectedID,Sim80x.Bluetooth.ConnectedName,Sim80x.Bluetooth.ConnectedAddress,tmp_str);       
+      tmp_int32_t = sscanf(str2,"\r\nC: %hhd,%[^,],%[^,],%[^\r]",&Sim80x.Bluetooth.ConnectedID,Sim80x.Bluetooth.ConnectedName,Sim80x.Bluetooth.ConnectedAddress,tmp_str);
       if(strcmp(tmp_str,"\"HFP\"")==0)
         tmp_int32_t = BluetoothProfile_HSP_HFP;
       else if(strcmp(tmp_str,"\"HSP\"")==0)
@@ -927,7 +903,7 @@ void  Sim80x_BufferProcess(void)
       else if(strcmp(tmp_str,"\"SPP\"")==0)
         tmp_int32_t = BluetoothProfile_SSP;
       else tmp_int32_t = BluetoothProfile_NotSet;
-    
+
       for(uint8_t i=0 ;i<sizeof(Sim80x.Bluetooth.ConnectedProfile) ; i++)
       {
         if(Sim80x.Bluetooth.ConnectedProfile[i]==(BluetoothProfile_t)tmp_int32_t)
@@ -940,28 +916,25 @@ void  Sim80x_BufferProcess(void)
       }
       str1+=5;
       goto CheckAnotherConnectedProfile;
-    }    
-  }  
-  //##################################################  
-  str1 = strstr(strStart,"\r\n+BTPAIRING:");
-  if(str1!=NULL)
+    }
+  }
+  //##################################################
+  else if ((str1 = strstr(strStart,"\r\n+BTPAIRING:")) != NULL)
   {
     Sim80x.Bluetooth.ConnectedID=0;
     memset(Sim80x.Bluetooth.ConnectedAddress,0,sizeof(Sim80x.Bluetooth.ConnectedAddress));
     memset(Sim80x.Bluetooth.ConnectedName,0,sizeof(Sim80x.Bluetooth.ConnectedName));
     tmp_int32_t = sscanf(str1,"\r\n+BTPAIRING: \"%[^\"]\",%[^,],%[^\r]",Sim80x.Bluetooth.ConnectedName,Sim80x.Bluetooth.ConnectedAddress,Sim80x.Bluetooth.PairingPassword);
     if(tmp_int32_t == 3)
-      Sim80x.Bluetooth.ConnectedID = 255;      
-  }    
-  //##################################################  
-  str1 = strstr(strStart,"\r\n+BTPAIR:");
-  if(str1!=NULL)
-  {
-    
+      Sim80x.Bluetooth.ConnectedID = 255;
   }
-  //##################################################  
-  str1 = strstr(strStart,"\r\n+BTCONNECT:");
-  if(str1!=NULL)
+  //##################################################
+  else if ((str1 = strstr(strStart,"\r\n+BTPAIR:")) != NULL)
+  {
+
+  }
+  //##################################################
+  else if ((str1 = strstr(strStart,"\r\n+BTCONNECT:")) != NULL)
   {
     Sim80x.Bluetooth.ConnectedID=0;
     memset(Sim80x.Bluetooth.ConnectedAddress,0,sizeof(Sim80x.Bluetooth.ConnectedAddress));
@@ -984,7 +957,7 @@ void  Sim80x_BufferProcess(void)
     else if(strcmp(tmp_str,"\"SPP\"")==0)
       tmp_int32_t = BluetoothProfile_SSP;
     else tmp_int32_t = BluetoothProfile_NotSet;
-    
+
     for(uint8_t i=0 ;i<sizeof(Sim80x.Bluetooth.ConnectedProfile) ; i++)
     {
       if(Sim80x.Bluetooth.ConnectedProfile[i]==(BluetoothProfile_t)tmp_int32_t)
@@ -996,9 +969,8 @@ void  Sim80x_BufferProcess(void)
       }
     }
   }
-  //##################################################  
-  str1 = strstr(strStart,"\r\n+BTCONNECTING:");
-  if(str1!=NULL)
+  //##################################################
+  else if ((str1 = strstr(strStart,"\r\n+BTCONNECTING:")) != NULL)
   {
     memset(tmp_str,0,sizeof(tmp_str));
     str1 = strchr(str1,',');
@@ -1024,114 +996,100 @@ void  Sim80x_BufferProcess(void)
       Sim80x.Bluetooth.ConnectingRequestProfile = BluetoothProfile_SSP;
     else Sim80x.Bluetooth.ConnectingRequestProfile = BluetoothProfile_NotSet;
   }
-  //##################################################  
-  str1 = strstr(strStart,"\r\n+BTDISCONN:");
-  if(str1!=NULL)
+  //##################################################
+  else if ((str1 = strstr(strStart,"\r\n+BTDISCONN:")) != NULL)
   {
-    Sim80x.Bluetooth.ConnectedID=0;    
+    Sim80x.Bluetooth.ConnectedID=0;
     memset(Sim80x.Bluetooth.ConnectedProfile,0,sizeof(Sim80x.Bluetooth.ConnectedProfile));
     memset(Sim80x.Bluetooth.ConnectedAddress,0,sizeof(Sim80x.Bluetooth.ConnectedAddress));
-    memset(Sim80x.Bluetooth.ConnectedName,0,sizeof(Sim80x.Bluetooth.ConnectedName));    
+    memset(Sim80x.Bluetooth.ConnectedName,0,sizeof(Sim80x.Bluetooth.ConnectedName));
     Sim80x.Bluetooth.NeedGetStatus=1;
   }
-  //##################################################  
-  str1 = strstr(strStart,"\r\n+BTVIS:");
-  if(str1!=NULL)
+  //##################################################
+  else if ((str1 = strstr(strStart,"\r\n+BTVIS:")) != NULL)
   {
     str1 = strchr(str1,':');
     str1++;
     Sim80x.Bluetooth.Visibility=atoi(str1);
   }
-  //##################################################  
-  str1 = strstr(strStart,"\r\n+BTSPPDATA:");
-  if(str1!=NULL)
+  //##################################################
+  else if ((str1 = strstr(strStart,"\r\n+BTSPPDATA:")) != NULL)
   {
     str1 = strchr(str1,',');
     str1++;
     tmp_int32_t = atoi(str1);
     str1 = strchr(str1,',');
     str1++;
-    strncpy(Sim80x.Bluetooth.SPPBuffer,str1,tmp_int32_t);    
+    strncpy(Sim80x.Bluetooth.SPPBuffer,str1,tmp_int32_t);
     Sim80x.Bluetooth.SPPLen = tmp_int32_t;
-  }  
-  //##################################################  
-  
-  //##################################################  
-  
-  //##################################################  
-  
-  //##################################################  
-  
-  
-  //##################################################  
+  }
+  //##################################################
+
+  //##################################################
+
+  //##################################################
+
+  //##################################################
+
+
+  //##################################################
   #endif
-  //##################################################  
-  //##################################################  
+  //##################################################
+  //##################################################
   //##################################################
   #if (_SIM80X_USE_GPRS==1)
-  //##################################################  
-  str1 = strstr(strStart,"\r\n+CGDCONT:");
-  if(str1!=NULL)
+  //##################################################
+  if ((str1 = strstr(strStart,"\r\n+CGDCONT:")) != NULL)
   {
-    
-  }  
-  //##################################################  
-  str1 = strstr(strStart,"\r\n+CGQMIN:");
-  if(str1!=NULL)
-  {
-    
-  }    
-  //##################################################  
-  str1 = strstr(strStart,"\r\n+CGQREQ:");
-  if(str1!=NULL)
-  {
-    
-  }    
-  //##################################################  
-  str1 = strstr(strStart,"\r\n+CGACT:");
-  if(str1!=NULL)
-  {
-    
-  }   
-  //##################################################  
-  str1 = strstr(strStart,"\r\n+CGPADDR:");
-  if(str1!=NULL)
-  {
-    
-  } 
-  //##################################################  
-  str1 = strstr(strStart,"\r\n+CGCLASS:");
-  if(str1!=NULL)
-  {
-    
-  } 
-  //##################################################  
-  str1 = strstr(strStart,"\r\n+CGEREP:");
-  if(str1!=NULL)
-  {
-    
-  } 
-  //##################################################  
-  str1 = strstr(strStart,"\r\n+CGREG:");
-  if(str1!=NULL)
-  {
-    
-  } 
-  //##################################################  
-  str1 = strstr(strStart,"\r\n+CSTT:");
-  if(str1!=NULL)
-  {
-    sscanf(str1,"\r\n+CSTT: \"%[^\"]\",\"%[^\"]\",\"%[^\"]\"\r\n",Sim80x.GPRS.APN,Sim80x.GPRS.APN_UserName,Sim80x.GPRS.APN_Password);    
+
   }
-  //##################################################  
-  str1 = strstr(strStart,"AT+CIFSR\r\r\n");
-  if(str1!=NULL)
+  //##################################################
+  else if ((str1 = strstr(strStart,"\r\n+CGQMIN:")) != NULL)
+  {
+
+  }
+  //##################################################
+  else if ((str1 = strstr(strStart,"\r\n+CGQREQ:")) != NULL)
+  {
+
+  }
+  //##################################################
+  else if ((str1 = strstr(strStart,"\r\n+CGACT:")) != NULL)
+  {
+
+  }
+  //##################################################
+  else if ((str1 = strstr(strStart,"\r\n+CGPADDR:")) != NULL)
+  {
+
+  }
+  //##################################################
+  else if ((str1 = strstr(strStart,"\r\n+CGCLASS:")) != NULL)
+  {
+
+  }
+  //##################################################
+  else if ((str1 = strstr(strStart,"\r\n+CGEREP:")) != NULL)
+  {
+
+  }
+  //##################################################
+  else if ((str1 = strstr(strStart,"\r\n+CGREG:")) != NULL)
+  {
+
+  }
+  //##################################################
+  else if ((str1 = strstr(strStart,"\r\n+CSTT:")) != NULL)
+  {
+    sscanf(str1,"\r\n+CSTT: \"%[^\"]\",\"%[^\"]\",\"%[^\"]\"\r\n",Sim80x.GPRS.APN,Sim80x.GPRS.APN_UserName,Sim80x.GPRS.APN_Password);
+  }
+  //##################################################
+  else if ((str1 = strstr(strStart,"AT+CIFSR\r\r\n")) != NULL)
   {
     sscanf(str1,"AT+CIFSR\r\r\n%[^\r]",Sim80x.GPRS.LocalIP);
-  } 
-  //##################################################  
-  str1 = strstr(strStart,"\r\n+CIPMUX:");
-  if(str1!=NULL)
+  }
+  //##################################################
+  else if ((str1 = strstr(strStart,"\r\n+CIPMUX:")) != NULL)
   {
     str1 =strchr(str1,':');
     str1++;
@@ -1139,62 +1097,57 @@ void  Sim80x_BufferProcess(void)
       Sim80x.GPRS.MultiConnection=0;
     else
       Sim80x.GPRS.MultiConnection=1;
-  } 
-  //##################################################  
-  str1 = strstr(strStart,"\r\nCONNECT OK\r\n");
-  if(str1!=NULL)
+  }
+  //##################################################
+  else if ((str1 = strstr(strStart,"\r\nCONNECT OK\r\n")) !=NULL)
   {
     if(Sim80x.GPRS.MultiConnection==0)
     {
-      Sim80x.GPRS.Connection[0] = GPRSConnection_ConnectOK;      
+      Sim80x.GPRS.Connection[0] = GPRSConnection_ConnectOK;
     }
     else
     {
 
-    }   
-  } 
-  //##################################################  
-  str1 = strstr(strStart,"\r\nCONNECT FAIL\r\n");
-  if(str1!=NULL)
+    }
+  }
+  //##################################################
+  else if ((str1 = strstr(strStart,"\r\nCONNECT FAIL\r\n")) != NULL)
   {
     if(Sim80x.GPRS.MultiConnection==0)
     {
-      Sim80x.GPRS.Connection[0] = GPRSConnection_ConnectFail;      
+      Sim80x.GPRS.Connection[0] = GPRSConnection_ConnectFail;
     }
     else
     {
 
-    }   
-  } 
-  //##################################################  
-  str1 = strstr(strStart,"\r\nALREADY CONNECT\r\n");
-  if(str1!=NULL)
+    }
+  }
+  //##################################################
+  else if ((str1 = strstr(strStart,"\r\nALREADY CONNECT\r\n")) != NULL)
   {
     if(Sim80x.GPRS.MultiConnection==0)
     {
-      Sim80x.GPRS.Connection[0] = GPRSConnection_AlreadyConnect;      
+      Sim80x.GPRS.Connection[0] = GPRSConnection_AlreadyConnect;
     }
     else
     {
 
-    }   
-  } 
-  //##################################################  
-  str1 = strstr(strStart,"\r\nSEND OK\r\n");
-  if(str1!=NULL)
+    }
+  }
+  //################################################## 
+  else if ((str1 = strstr(strStart,"\r\nSEND OK\r\n")) != NULL)
   {
     if(Sim80x.GPRS.MultiConnection==0)
     {
-      Sim80x.GPRS.SendStatus[0] = GPRSSendData_SendOK;      
+      Sim80x.GPRS.SendStatus[0] = GPRSSendData_SendOK;
     }
     else
     {
 
-    }   
-  } 
-  //##################################################  
-  str1 = strstr(strStart,"\r\n+HTTPACTION:");
-  if(str1!=NULL)
+    }
+  }
+  //##################################################
+  else if ((str1 = strstr(strStart,"\r\n+HTTPACTION:")) != NULL)
   {
     str1 = strchr(str1,':');
     str1++;
@@ -1204,11 +1157,10 @@ void  Sim80x_BufferProcess(void)
     Sim80x.GPRS.HttpAction.ResultCode = atoi(str1);
     str1 = strchr(str1,',');
     str1++;
-    Sim80x.GPRS.HttpAction.DataLen = atoi(str1);    
-  } 
-  //##################################################  
-  str1 = strstr(strStart,"\r\n+HTTPREAD:");
-  if(str1!=NULL)
+    Sim80x.GPRS.HttpAction.DataLen = atoi(str1);
+  }
+  //##################################################
+  else if ((str1 = strstr(strStart,"\r\n+HTTPREAD:")) != NULL)
   {
     str1 = strchr(str1,':');
     str1++;
@@ -1218,11 +1170,11 @@ void  Sim80x_BufferProcess(void)
     strncpy(Sim80x.GPRS.HttpAction.Data,str1,Sim80x.GPRS.HttpAction.TransferDataLen);
     Sim80x.GPRS.HttpAction.CopyToBuffer=1;
   }
-  //##################################################    
-  #endif  
-  //##################################################  
-  //##################################################  
-  //##################################################  
+  //##################################################
+  #endif
+  //##################################################
+  //##################################################
+  //##################################################
   for( uint8_t parameter=0; parameter<11; parameter++)
   {
     if((parameter==10) || (Sim80x.AtCommand.ReceiveAnswer[parameter][0]==0))
@@ -1236,7 +1188,7 @@ void  Sim80x_BufferProcess(void)
       Sim80x.AtCommand.FindAnswer = parameter+1;
       Sim80x.AtCommand.ReceiveAnswerExeTime = HAL_GetTick()-Sim80x.AtCommand.SendCommandStartTime;
       break;
-    }    
+    }
   }
   //##################################################
   //---       Buffer Process
@@ -1245,7 +1197,7 @@ void  Sim80x_BufferProcess(void)
   printf("%s",strStart);
   #endif
   Sim80x.UsartRxIndex=0;
-  memset(Sim80x.UsartRxBuffer,0,_SIM80X_BUFFER_SIZE);    
+  memset(Sim80x.UsartRxBuffer,0,_SIM80X_BUFFER_SIZE);
   Sim80x.Status.Busy=0;
 }
 
