@@ -1,4 +1,4 @@
-# Sim800 series library
+# Sim800 series library. Please use http://github.com/nimaltd/gsm
 [![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/O5O4221XY)
 * http://www.github.com/NimaLTD   
 * https://www.instagram.com/github.nimaltd/   
