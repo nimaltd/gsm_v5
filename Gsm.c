@@ -269,7 +269,8 @@ bool  Gsm_MsgSetTextModeParameter(uint8_t fo,uint8_t vp,uint8_t pid,uint8_t dcs)
   char str[32];
   char strParam[32];
   snprintf(str,sizeof(str),"AT+CSMP=%d,%d,%d,%d\r\n",fo,vp,pid,dcs);
-  snprintf(strParam,sizeof(strParam),"AT+CSMP=%d,%d,%d,%d\r\nOK\r\n",fo,vp,pid,dcs);
+  
+  snprintf(strParam,sizeof(strParam),"AT+CSMP=%d,%d,%d,%d\r\n\r\nOK\r\n",fo,vp,pid,dcs);
   answer = Sim80x_SendAtCommand(str,500,1,strParam);
   if(answer == 1)
     return true;
