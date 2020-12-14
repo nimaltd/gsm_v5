@@ -26,7 +26,7 @@
 
 * None RTOS example:
    
-**  file atcConfig.h
+*file atcConfig.h
 ``` 
 #define	_ATC_DEBUG            0       //  use printf debug
 #define	_ATC_RTOS             0       //  0: no rtos    1: cmsis_os v1    2: cmsis_os v2
@@ -35,7 +35,7 @@
 #define	_ATC_SEARCH_MAX       10      //  maximum	of always search in buffer
 #define	_ATC_RXTIMEOUT_MS     50      //  rx timeout to get new packet
 ```
-** file main.c   
+*file main.c   
 ```
 #include "gsm.h"
 
@@ -52,8 +52,8 @@ int main()
 ```
 
 * RTOS example:
-   
-   file atcConfig.h
+  
+* file atcConfig.h
 ```
 #define	_ATC_DEBUG            0       //  use printf debug
 #define	_ATC_RTOS             1       //  0: no rtos    1: cmsis_os v1    2: cmsis_os v2
