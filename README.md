@@ -22,7 +22,7 @@
 * Add 'gsm_rxCallback()' to selected usart interrupt.
 * Call `gsm_init()`.
 * Call `gsm_loop()` in infinit loop.
-* If using FREERTOS, please create a task for library with at least 512 word heap size.
+* If using FREERTOS, please create a task for gsm with at least 512 word heap size. 
 --------------------------------------------------------------------------------
 * None RTOS example:
 * file atcConfig.h
