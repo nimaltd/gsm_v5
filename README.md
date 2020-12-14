@@ -51,7 +51,6 @@ int main()
 ```
 --------------------------------------------------------------------------------
 * RTOS example:
-  
 * file atcConfig.h
 ```
 #define	_ATC_DEBUG            0       //  use printf debug
