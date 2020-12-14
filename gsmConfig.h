@@ -6,7 +6,7 @@
 #define _GSM_KEY_GPIO                   GPIOC
 #define _GSM_KEY_PIN                    GPIO_PIN_12
 
-#define _GSM_DEBUG                      1       //  use printf debug
+#define _GSM_DEBUG                      0       //  use printf debug
 #define _GSM_CALL                       1       //  enable call
 #define _GSM_MSG                        1       //  enable message
 #define _GSM_GPRS                       0       //  enable gprs , coming soon
