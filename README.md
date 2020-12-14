@@ -1,4 +1,4 @@
-## stm32 gsm library
+## gsm module library for STM32 LL
 *	Author:     Nima Askari
 *	WebSite:    https://www.github.com/NimaLTD
 *	Instagram:  https://www.instagram.com/github.NimaLTD
@@ -24,7 +24,7 @@
 * Call `gsm_loop()` in infinit loop.
 * If using FREERTOS, please create a task for gsm with at least 512 word heap size. 
 --------------------------------------------------------------------------------
-* None RTOS example:
+## None RTOS example:
 * file atcConfig.h
 ``` 
 #define	_ATC_DEBUG            0       //  use printf debug
@@ -50,7 +50,7 @@ int main()
 }
 ```
 --------------------------------------------------------------------------------
-* RTOS example:
+## RTOS example:
 * file atcConfig.h
 ```
 #define	_ATC_DEBUG            0       //  use printf debug
