@@ -32,6 +32,7 @@ int main()
 {
   gsm_init();
   gsm_waitForRegister(30);
+  gsm_msg_send("+98xxxxxxx", "TEST MSG 1");
   while (1)
   {
     gsm_loop();
