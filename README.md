@@ -1,5 +1,5 @@
 ## gsm library 
-*	Author:     Nima Askari
+*	Author:     "Nima Askari"
 *	WebSite:    https://www.github.com/NimaLTD
 *	Instagram:  https://www.instagram.com/github.NimaLTD
 *	LinkedIn:   https://www.linkedin.com/in/NimaLTD
