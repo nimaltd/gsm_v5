@@ -2,6 +2,22 @@
 #ifndef _GSM_H_
 #define _GSM_H_
 
+/*
+ *	Author:     Nima Askari
+ *	WebSite:    https://www.github.com/NimaLTD
+ *	Instagram:  https://www.instagram.com/github.NimaLTD
+ *	LinkedIn:   https://www.linkedin.com/in/NimaLTD
+ *	Youtube:    https://www.youtube.com/channel/UCUhY7qY1klJm1d2kulr9ckw
+ */
+
+/*
+ * Version:	5.0.0
+ *
+ * History:
+ *
+ * (5.0.0):	Rewrite again. Support NONE-RTOS, RTOS V1 and RTOS V2.
+ */
+ 
 #include "gsmConfig.h"
 #include "atcConfig.h"
 #include "atc.h"
