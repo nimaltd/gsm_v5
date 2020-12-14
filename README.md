@@ -16,32 +16,23 @@
 * [ ] SIM800H tested.
 --------------------------------------------------------------------------------   
 * Enable USART (LL Library) and RX interrupt.
-* Add library to your project.
-* Configure `atcConfig.h` file.
-* Create a struct as global.
-* Create found callback function if you need it.
-* Call `atc_init()`.
-* You could add always search strings now.
-* Call `atc_loop()` in infinit loop.
-```
-#include "atc.h"
-atc_t  atc;
+* Add gsm and atc library to your project.
+* Configure `gsmConfig.h` and `atcConfig.h` files.
+* Add 'gsm_rxCallback()' to selected usart interrupt.
+* Call `gsm_init()`.
+* Call `gsm_loop()` in infinit loop.
 
-void  atc_found(char *foundStr)
-{
-  if (strstr(foundStr, "\r\n+CMD:") != NULL)
-  {
-  
-  }
-}
+* None RTOS example:
+```
+#include "gsm.h"
 
 int main()
 {
-  atc_init(&atc, "MY_ATC", USART1, atc_found);
-  atc_addSearch(&atc, "\r\n+CMD:");
+  gsm_init();
+  gsm_waitForRegister(30);
   while (1)
   {
-    atc_loop(&atc);
+    gsm_loop();
   }  
 }
 ```
