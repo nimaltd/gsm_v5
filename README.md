@@ -5,7 +5,7 @@
 *	LinkedIn:   https://www.linkedin.com/in/NimaLTD
 *	Youtube:    https://www.youtube.com/channel/UCUhY7qY1klJm1d2kulr9ckw 
 --------------------------------------------------------------------------------
-* This library using my 'atc' library, please download on 'http://github.com/nimaltd/atc'   
+* This library using my 'atc' library, please download 'http://github.com/nimaltd/atc'.
 --------------------------------------------------------------------------------
 * [x] NONE RTOS Supported.
 * [x] RTOS V1 Supported.
