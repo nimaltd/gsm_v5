@@ -1,4 +1,4 @@
-## gsm library 
+## stm32 gsm library
 *	Author:     Nima Askari
 *	WebSite:    https://www.github.com/NimaLTD
 *	Instagram:  https://www.instagram.com/github.NimaLTD
