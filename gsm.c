@@ -16,13 +16,15 @@ void gsm_found(char *found_str)
   str = strstr(found_str, "\r\n+CREG: ");
   if (str != NULL)
   {
-    if (strstr(str, "\r\n+CREG: 1\r\n") != NULL)
+    int16_t p1 = -1, p2 = -1;
+    sscanf(str, "\r\n+CREG: %hd,%hd", &p1, &p2);
+    if (p2 == 1)
     {
       gsm.status.netReg = 1;
       gsm.status.netChange = 1;
       return;
     }
-    if (strstr(str, "\r\n+CREG: 0\r\n") != NULL)
+    else
     {
       gsm.status.netReg = 0;
       gsm.status.netChange = 1;
@@ -152,6 +154,7 @@ void gsm_loop(void)
   {
     gsm_time_1s = HAL_GetTick();
 
+#if (_GSM_CALL == 1 || _GSM_MSG == 1 || _GSM_GPRS == 1)
     //  +++ simcard check
     if (gsm.status.power == 1 && gsm.status.simcardChecked == 0)
     {
@@ -201,6 +204,7 @@ void gsm_loop(void)
       }
     }
     //  --- network check
+#endif
 
     //  +++ call check
 #if (_GSM_CALL == 1)
@@ -228,8 +232,8 @@ void gsm_loop(void)
     {
       if (gsm_msg_read(gsm.msg.newMsg))
       {
-        gsm_callback_newMsg(gsm.msg.number, gsm.msg.time, (char*) gsm.buffer);
         gsm_msg_delete(gsm.msg.newMsg);
+        gsm_callback_newMsg(gsm.msg.number, gsm.msg.time, (char*) gsm.buffer);
       }
       gsm.msg.newMsg = -1;
     }
@@ -243,15 +247,12 @@ void gsm_loop(void)
   {
     gsm_time_10s = HAL_GetTick();
 
+#if (_GSM_CALL == 1 || _GSM_MSG == 1 || _GSM_GPRS == 1)
     //  +++ check network
     gsm_getSignalQuality_0_to_100();
     if (gsm.status.netReg == 0)
     {
-      if (gsm_command("AT+CREG?\r\n", 1000 , NULL, 0, 1, "\r\n+CREG: 1,1\r\n") == 1)
-      {
-        gsm.status.netReg = 1;
-        gsm.status.netChange = 1;
-      }
+      gsm_command("AT+CREG?\r\n", 1000 , NULL, 0, 0);
     }
     //  --- check network
 
@@ -263,15 +264,15 @@ void gsm_loop(void)
       {
         if (gsm_msg_read(i))
         {
-          gsm_callback_newMsg(gsm.msg.number, gsm.msg.time, (char*) gsm.buffer);
           gsm_msg_delete(i);
+          gsm_callback_newMsg(gsm.msg.number, gsm.msg.time, (char*) gsm.buffer);
         }
       }
       gsm_msg_updateStorage();
     }
 #endif
     //  --- msg check
-
+#endif
   }
   //  --- 10s timer ######################
 
@@ -306,6 +307,7 @@ bool gsm_power(bool on_off)
   if (on_off == true && state == 1)
   {
     memset(&gsm.status, 0, sizeof(gsm.status));
+    gsm.status.power = 1;
     gsm_init_commands();
     return true;
   }
@@ -328,6 +330,7 @@ bool gsm_power(bool on_off)
     {
       gsm_delay(5000);
       gsm_init_commands();
+      gsm.status.power = 1;
       return true;
     }
     else
