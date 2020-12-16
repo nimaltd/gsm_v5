@@ -73,6 +73,31 @@ typedef enum
 
 }gsm_msg_store_t;
 
+typedef enum
+{
+  gsm_ftp_error_none = 0,
+  gsm_ftp_error_error = 1,
+  gsm_ftp_error_netError = 61,
+  gsm_ftp_error_dnsError = 62,
+  gsm_ftp_error_connectError = 63,
+  gsm_ftp_error_timeout = 64,
+  gsm_ftp_error_serverError = 65,
+  gsm_ftp_error_operationNotAllow = 66,
+  gsm_ftp_error_replayError = 70,
+  gsm_ftp_error_userError = 71,
+  gsm_ftp_error_passwordError = 72,
+  gsm_ftp_error_typeError = 73,
+  gsm_ftp_error_restError = 74,
+  gsm_ftp_error_passiveError = 75,
+  gsm_ftp_error_activeError = 76,
+  gsm_ftp_error_operateError = 77,
+  gsm_ftp_error_uploadError = 78,
+  gsm_ftp_error_downloadError = 79,
+  gsm_ftp_error_manualQuit = 86,
+  gsm_ftp_error_notExist = 100,
+
+}gsm_ftp_error_t;
+
 typedef struct
 {
   uint8_t           year;
@@ -113,6 +138,22 @@ typedef struct
 }gsm_msg_t;
 #endif
 
+#if (_GSM_GPRS == 1)
+typedef struct
+{
+  bool              connected;
+  bool              connectedLast;
+  char              ip[16];
+  uint32_t          dataLen;
+  uint32_t          dataCurrent;
+  int16_t           code;
+  uint8_t           tcpConnection;
+  uint8_t           gotData;
+  uint32_t          ftpExtOffset;
+
+}gsm_gprs_t;
+#endif
+
 typedef struct
 {
   uint8_t           power:1;
@@ -127,6 +168,7 @@ typedef struct
 typedef struct
 {
   uint8_t           inited;
+  uint8_t           lock;
   uint8_t           signal;
   gsm_status_t      status;
   atc_t             atc;
@@ -138,60 +180,101 @@ typedef struct
 #if (_GSM_CALL == 1)
   gsm_msg_t         msg;
 #endif
+#if (_GSM_GPRS == 1)
+  gsm_gprs_t       gprs;
+#endif
 
 }gsm_t;
 
 extern  gsm_t   gsm;
 //###############################################################################################################
-#define       gsm_delay(x)            atc_delay(x)
-#define       gsm_command(...)        atc_command(&gsm.atc, __VA_ARGS__)
-#define       gsm_rxCallback()        atc_rxCallback(&gsm.atc)
+#define         gsm_delay(x)            atc_delay(x)
+#define         gsm_command(...)        atc_command(&gsm.atc, __VA_ARGS__)
+#define         gsm_transmit(data,len)  atc_transmit(&gsm.atc,data,len)
+#define         gsm_rxCallback()        atc_rxCallback(&gsm.atc)
 
-bool          gsm_init(void);
-void          gsm_loop(void);
-bool          gsm_power(bool on_off);
+bool            gsm_init(void);
+void            gsm_loop(void);
+bool            gsm_power(bool on_off);
+bool            gsm_lock(uint32_t timeout_ms);
+void            gsm_unlock();
 
-bool          gsm_registered(void);
-bool          gsm_setDefault(void);
-bool          gsm_saveProfile(void);
-bool          gsm_enterPinPuk(const char* string);
-bool          gsm_getIMEI(char* string, uint8_t sizeOfString);
-bool          gsm_getVersion(char* string, uint8_t sizeOfString);
-bool          gsm_getModel(char* string, uint8_t sizeOfString);
-bool          gsm_getServiceProviderName(char* string, uint8_t sizeOfString);
-uint8_t       gsm_getSignalQuality_0_to_100(void);
-bool          gsm_waitForRegister(uint8_t waitSecond);
-bool          gsm_tonePlay(gsm_tone_t gsm_tone_, uint32_t durationMiliSecond, uint8_t level_0_100);
-bool          gsm_toneStop(void);
-bool          gsm_dtmf(char *string, uint32_t durationMiliSecond);
-bool          gsm_ussd(char *command, char *answer, uint16_t sizeOfAnswer, uint8_t waitSecond);
+bool            gsm_registered(void);
+bool            gsm_setDefault(void);
+bool            gsm_saveProfile(void);
+bool            gsm_enterPinPuk(const char* string);
+bool            gsm_getIMEI(char* string, uint8_t sizeOfString);
+bool            gsm_getVersion(char* string, uint8_t sizeOfString);
+bool            gsm_getModel(char* string, uint8_t sizeOfString);
+bool            gsm_getServiceProviderName(char* string, uint8_t sizeOfString);
+uint8_t         gsm_getSignalQuality_0_to_100(void);
+bool            gsm_waitForRegister(uint8_t waitSecond);
+bool            gsm_tonePlay(gsm_tone_t gsm_tone_, uint32_t durationMiliSecond, uint8_t level_0_100);
+bool            gsm_toneStop(void);
+bool            gsm_dtmf(char *string, uint32_t durationMiliSecond);
+bool            gsm_ussd(char *command, char *answer, uint16_t sizeOfAnswer, uint8_t waitSecond);
 //###############################################################################################################
-bool          gsm_call_answer(void);
-bool          gsm_call_dial(const char *number, uint8_t waitSecond);
-bool          gsm_call_end(void);
+bool            gsm_call_answer(void);
+bool            gsm_call_dial(const char *number, uint8_t waitSecond);
+bool            gsm_call_end(void);
 //###############################################################################################################
-bool          gsm_msg_textMode(bool on_off);
-bool          gsm_msg_isTextMode(void);
-bool          gsm_msg_selectStorage(gsm_msg_store_t gsm_msg_store_);
-bool          gsm_msg_selectCharacterSet(gsm_msg_chset_t gsm_msg_chset_);
-bool          gsm_msg_deleteAll(void);
-bool          gsm_msg_delete(uint16_t index);
-bool          gsm_msg_send(const char *number,const char *msg);
-bool          gsm_msg_read(uint16_t index);
-bool          gsm_msg_updateStorage(void);
-uint16_t      gsm_msg_getStorageUsed(void);
-uint16_t      gsm_msg_getStorageTotal(void);
-uint16_t      gsm_msg_getStorageFree(void);
+bool            gsm_msg_textMode(bool on_off, bool integer);
+bool            gsm_msg_isTextMode(void);
+bool            gsm_msg_selectStorage(gsm_msg_store_t gsm_msg_store_);
+bool            gsm_msg_selectCharacterSet(gsm_msg_chset_t gsm_msg_chset_);
+bool            gsm_msg_deleteAll(void);
+bool            gsm_msg_delete(uint16_t index);
+bool            gsm_msg_send(const char *number,const char *msg);
+bool            gsm_msg_read(uint16_t index);
+bool            gsm_msg_updateStorage(void);
+uint16_t        gsm_msg_getStorageUsed(void);
+uint16_t        gsm_msg_getStorageTotal(void);
+uint16_t        gsm_msg_getStorageFree(void);
 //###############################################################################################################
-void          gsm_callback_simcardReady(void);
-void          gsm_callback_simcardPinRequest(void);
-void          gsm_callback_simcardPukRequest(void);
-void          gsm_callback_simcardNotInserted(void);
-void          gsm_callback_networkRegister(void);
-void          gsm_callback_networkUnregister(void);
-void          gsm_callback_newCall(const char *number);
-void          gsm_callback_endCall(void);
-void          gsm_callback_dtmf(char *string, uint8_t len);
-void          gsm_callback_newMsg(char *number, gsm_time_t time, char *msg);
+bool            gsm_gprs_setApName(const char *apName);
+bool            gsm_gprs_connect(void);
+bool            gsm_gprs_disconnect(void);
+
+bool            gsm_gprs_httpInit(void);
+bool            gsm_gprs_httpSetContent(const char *content);
+bool            gsm_gprs_httpSetUserData(const char *data);
+bool            gsm_gprs_httpSendData(const char *data, uint16_t timeout_ms);
+int16_t         gsm_gprs_httpGet(const char *url, bool ssl, uint16_t timeout_ms);
+int16_t         gsm_gprs_httpPost(const char *url, bool ssl, uint16_t timeout_ms);
+uint32_t        gsm_gprs_httpDataLen(void);
+uint16_t        gsm_gprs_httpRead(uint16_t len);
+bool            gsm_gprs_httpTerminate(void);
+
+gsm_ftp_error_t gsm_gprs_ftpLogin(const char *ftpAddress, const char *ftpUserName, const char *ftpPassword, uint16_t port);
+gsm_ftp_error_t gsm_gprs_ftpUploadBegin(bool asciiFile, bool append, const char *path, const char *fileName, const uint8_t *data, uint16_t len);
+gsm_ftp_error_t gsm_gprs_ftpUpload(const uint8_t *data, uint16_t len);
+gsm_ftp_error_t gsm_gprs_ftpUploadEnd(void);
+gsm_ftp_error_t gsm_gprs_ftpExtUploadBegin(bool asciiFile, bool append, const char *path, const char *fileName);
+gsm_ftp_error_t gsm_gprs_ftpExtUpload(uint8_t *data, uint16_t len);
+gsm_ftp_error_t gsm_gprs_ftpExtUploadEnd(void);
+gsm_ftp_error_t gsm_gprs_ftpCreateDir(const char *path);
+gsm_ftp_error_t gsm_gprs_ftpRemoveDir(const char *path);
+uint32_t        gsm_gprs_ftpGetSize(const char *path, const char *name);
+gsm_ftp_error_t gsm_gprs_ftpRemove(const char *path, const char *name);
+gsm_ftp_error_t gsm_gprs_ftpIsExistFolder(const char *path);
+bool            gsm_gprs_ftpIsBusy(void);
+gsm_ftp_error_t gsm_gprs_ftpQuit(void);
+
+bool            gsm_gprs_ntpServer(char *server, int8_t time_zone_in_quarter);
+bool            gsm_gprs_ntpSyncTime(void);
+bool            gsm_gprs_ntpGetTime(char *string);
+//###############################################################################################################
+void            gsm_callback_simcardReady(void);
+void            gsm_callback_simcardPinRequest(void);
+void            gsm_callback_simcardPukRequest(void);
+void            gsm_callback_simcardNotInserted(void);
+void            gsm_callback_networkRegister(void);
+void            gsm_callback_networkUnregister(void);
+void            gsm_callback_newCall(const char *number);
+void            gsm_callback_endCall(void);
+void            gsm_callback_dtmf(char *string, uint8_t len);
+void            gsm_callback_newMsg(char *number, gsm_time_t time, char *msg);
+void            gsm_callback_gprsConnected(void);
+void            gsm_callback_gprsDisconnected(void);
 //###############################################################################################################
 #endif /* _GSM_H_ */

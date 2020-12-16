@@ -9,7 +9,7 @@
 #define _GSM_DEBUG                      1       //  use printf debug
 #define _GSM_CALL                       1       //  enable call
 #define _GSM_MSG                        1       //  enable message
-#define _GSM_GPRS                       0       //  enable gprs , coming soon
+#define _GSM_GPRS                       1       //  enable gprs
 #define _GSM_BLUETOOTH                  0       //  enable bluetooth , coming soon
 
 #endif /*_GSMCONFIG_H_ */
