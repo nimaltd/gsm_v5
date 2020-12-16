@@ -1,4 +1,4 @@
-## gsm module library for STM32 LL
+## gsm module library for STM32 LL (BETA)
 *	Author:     Nima Askari
 *	WebSite:    https://www.github.com/NimaLTD
 *	Instagram:  https://www.instagram.com/github.NimaLTD
