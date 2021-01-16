@@ -88,7 +88,7 @@ bool gsm_msg_isTextMode(void)
     return false;
   uint8_t ans;
   ans = gsm_command("AT+CMGF?\r\n", 1000, NULL, 0, 3, "\r\n+CMGF: 0\r\n", "\r\n+CMGF: 1\r\n", "\r\nERROR\r\n");
-  if (ans == 1)
+  if (ans == 0)
   {
     gsm.msg.textMode = 0;
     gsm_unlock();
