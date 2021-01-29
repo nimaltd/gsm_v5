@@ -6,37 +6,52 @@ bool gsm_gprs_setApName(const char *apName)
 {
   char str[64];
   if (apName == NULL)
+  {
+    gsm_printf("[GSM] gprs_setApName(%s) failed!\r\n", apName);
     return false;
+  }
   if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] gprs_setApName(%s) failed!\r\n", apName);
     return false;
+  }
   if (gsm_command("AT+SAPBR=3,1,\"Contype\",\"GPRS\"\r\n", 1000, NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") != 1)
   {
+    gsm_printf("[GSM] gprs_setApName(%s) failed!\r\n", apName);
     gsm_unlock();
     return false;
   }
   sprintf(str, "AT+SAPBR=3,1,\"APN\",\"%s\"\r\n", apName);
   if (gsm_command(str, 1000, NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") == 1)
   {
+    gsm_printf("[GSM] gprs_setApName(%s) done\r\n", apName);
     gsm_unlock();
     return true;
   }
+  gsm_printf("[GSM] gprs_setApName(%s) failed!\r\n", apName);
   gsm_unlock();
   return false;
 }
 //###############################################################################################################
 bool gsm_gprs_connect(void)
 {
+  gsm_printf("[GSM] gprs_connect() begin\r\n");
   if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] gprs_connect() failed!\r\n");
     return false;
+  }
   char str[32];
   gsm_command("AT+SAPBR=0,1\r\n", 1000, NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n");
   if (gsm_command("AT+SAPBR=1,1\r\n", 85000, NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") != 1)
   {
+    gsm_printf("[GSM] gprs_connect() failed!\r\n");
     gsm_unlock();
     return false;
   }
   if (gsm_command("AT+SAPBR=2,1\r\n", 1000, str, sizeof(str), 2, "\r\n+SAPBR: 1,1,", "\r\nERROR\r\n") != 1)
   {
+    gsm_printf("[GSM] gprs_connect() failed!\r\n");
     gsm.gprs.connected = false;
     gsm_unlock();
     return false;
@@ -45,6 +60,7 @@ bool gsm_gprs_connect(void)
   sscanf(str, "\r\n+SAPBR: 1,1,\"%[^\"\r\n]", gsm.gprs.ip);
   gsm.gprs.connected = true;
   gsm.gprs.connectedLast = true;
+  gsm_printf("[GSM] gprs_connect() done\r\n");
   gsm_unlock();
   return true;
 }
@@ -52,14 +68,19 @@ bool gsm_gprs_connect(void)
 bool gsm_gprs_disconnect(void)
 {
   if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] gprs_disconnect() failed!\r\n");
     return false;
+  }
   if (gsm_command("AT+SAPBR=0,1\r\n", 1000, NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") == 1)
   {
     gsm.gprs.connected = false;
     gsm.gprs.connectedLast = false;
+    gsm_printf("[GSM] gprs_disconnect() done\r\n");
     gsm_unlock();
     return true;
   }
+  gsm_printf("[GSM] gprs_disconnect() failed!\r\n");
   gsm_unlock();
   return false;
 }
@@ -67,14 +88,22 @@ bool gsm_gprs_disconnect(void)
 bool gsm_gprs_httpInit(void)
 {
   if (gsm.gprs.connected == false)
+  {
+    gsm_printf("[GSM] gprs_httpInit() failed!\r\n");
     return false;
+  }
   if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] gprs_httpInit() failed!\r\n");
     return false;
+  }
   if (gsm_command("AT+HTTPINIT\r\n", 1000, NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") != 1)
   {
+    gsm_printf("[GSM] gprs_httpInit() failed!\r\n");
     gsm_unlock();
     return false;
   }
+  gsm_printf("[GSM] gprs_httpInit() done\r\n");
   gsm_unlock();
   return true;
 }
@@ -82,16 +111,24 @@ bool gsm_gprs_httpInit(void)
 bool gsm_gprs_httpSetContent(const char *content)
 {
   if (gsm.gprs.connected == false)
+  {
+    gsm_printf("[GSM] gprs_httpSetContent() failed!\r\n");
     return false;
+  }
   if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] gprs_httpSetContent() failed!\r\n");
     return false;
+  }
   char str[strlen(content) + 32];
   sprintf(str, "AT+HTTPPARA=\"CONTENT\",\"%s\"\r\n", content);
   if (gsm_command(str, 1000, NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") != 1)
   {
+    gsm_printf("[GSM] gprs_httpSetContent() failed!\r\n");
     gsm_unlock();
     return false;
   }
+  gsm_printf("[GSM] gprs_httpSetContent() done\r\n");
   gsm_unlock();
   return true;
 }
@@ -99,16 +136,24 @@ bool gsm_gprs_httpSetContent(const char *content)
 bool gsm_gprs_httpSetUserData(const char *data)
 {
   if (gsm.gprs.connected == false)
+  {
+    gsm_printf("[GSM] gprs_httpSetUserData() failed!\r\n");
     return false;
+  }
   if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] gprs_httpSetUserData() failed!\r\n");
     return false;
+  }
   gsm_transmit((uint8_t* ) "AT+HTTPPARA=\"USERDATA\",\"", strlen("AT+HTTPPARA=\"USERDATA\",\""));
   gsm_transmit((uint8_t* ) data, strlen(data));
   if (gsm_command("\"\r\n", 1000, NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") != 1)
   {
+    gsm_printf("[GSM] gprs_httpSetUserData() failed!\r\n");
     gsm_unlock();
     return false;
   }
+  gsm_printf("[GSM] gprs_httpSetUserData() done\r\n");
   gsm_unlock();
   return true;
 }
@@ -116,9 +161,15 @@ bool gsm_gprs_httpSetUserData(const char *data)
 bool gsm_gprs_httpSendData(const char *data, uint16_t timeout_ms)
 {
   if (gsm.gprs.connected == false)
+  {
+    gsm_printf("[GSM] gprs_httpSendData() failed!\r\n");
     return false;
+  }
   if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] gprs_httpSendData() failed!\r\n");
     return false;
+  }
   char str[32];
   sprintf(str, "AT+HTTPDATA=%d,%d\r\n", strlen(data), timeout_ms);
   do
@@ -128,9 +179,11 @@ bool gsm_gprs_httpSendData(const char *data, uint16_t timeout_ms)
     if (gsm_command(data, timeout_ms, NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") != 1)
       break;
     gsm_delay(timeout_ms);
+    gsm_printf("[GSM] gprs_httpSendData() done\r\n");
     gsm_unlock();
     return true;
   } while (0);
+  gsm_printf("[GSM] gprs_httpSendData() failed!\r\n");
   gsm_unlock();
   return false;
 }
@@ -138,9 +191,15 @@ bool gsm_gprs_httpSendData(const char *data, uint16_t timeout_ms)
 int16_t gsm_gprs_httpGet(const char *url, bool ssl, uint16_t timeout_ms)
 {
   if (gsm.gprs.connected == false)
+  {
+    gsm_printf("[GSM] gprs_httpGet(%s) failed!\r\n", url);
     return -1;
+  }
   if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] gprs_httpGet(%s) failed!\r\n", url);
     return false;
+  }
   gsm.gprs.code = -1;
   gsm.gprs.dataLen = 0;
   do
@@ -167,6 +226,7 @@ int16_t gsm_gprs_httpGet(const char *url, bool ssl, uint16_t timeout_ms)
       break;
     sscanf(str, "\r\n+HTTPACTION: 0,%hd,%ld\r\n", &gsm.gprs.code, &gsm.gprs.dataLen);
   } while (0);
+  gsm_printf("[GSM] gprs_httpGet(%s) done. answer: %d\r\n", url, gsm.gprs.code);
   gsm_unlock();
   return gsm.gprs.code;
 }
@@ -174,9 +234,15 @@ int16_t gsm_gprs_httpGet(const char *url, bool ssl, uint16_t timeout_ms)
 int16_t gsm_gprs_httpPost(const char *url, bool ssl, uint16_t timeout_ms)
 {
   if (gsm.gprs.connected == false)
+  {
+    gsm_printf("[GSM] gprs_httpPost(%s) failed!\r\n", url);
     return -1;
+  }
   if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] gprs_httpPost(%s) failed!\r\n", url);
     return false;
+  }
   gsm.gprs.code = -1;
   gsm.gprs.dataLen = 0;
   do
@@ -203,6 +269,7 @@ int16_t gsm_gprs_httpPost(const char *url, bool ssl, uint16_t timeout_ms)
       break;
     sscanf(str, "\r\n+HTTPACTION: 1,%hd,%ld\r\n", &gsm.gprs.code, &gsm.gprs.dataLen);
   } while (0);
+  gsm_printf("[GSM] gprs_httpPost(%s) done. answer: %d\r\n", url, gsm.gprs.code);
   gsm_unlock();
   return gsm.gprs.code;
 }
@@ -215,9 +282,15 @@ uint32_t gsm_gprs_httpDataLen(void)
 uint16_t gsm_gprs_httpRead(uint16_t len)
 {
   if (gsm.gprs.connected == false)
+  {
+    gsm_printf("[GSM] gprs_httpRead() failed!\r\n");
     return 0;
+  }
   if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] gprs_httpRead() failed!\r\n");
     return false;
+  }
   memset(gsm.buffer, 0, sizeof(gsm.buffer));
   char str[32];
   if (len >= sizeof(gsm.buffer))
@@ -225,6 +298,7 @@ uint16_t gsm_gprs_httpRead(uint16_t len)
   sprintf(str, "AT+HTTPREAD=%ld,%d\r\n", gsm.gprs.dataCurrent, len);
   if (gsm_command(str, 1000 , (char*)gsm.buffer, sizeof(gsm.buffer), 2, "\r\n+HTTPREAD: ", "\r\nERROR\r\n") != 1)
   {
+    gsm_printf("[GSM] gprs_httpRead() failed!\r\n");
     gsm_unlock();
     return 0;
   }
@@ -241,9 +315,11 @@ uint16_t gsm_gprs_httpRead(uint16_t len)
     s++;
     for (uint16_t i = 0; i < readLen; i++)
       gsm.buffer[i] = *s++;
+    gsm_printf("[GSM] gprs_httpRead() done. length: %d\r\n", readLen);
     gsm_unlock();
     return readLen;
   }
+  gsm_printf("[GSM] gprs_httpRead() failed!\r\n");
   gsm_unlock();
   return 0;
 }
@@ -251,14 +327,22 @@ uint16_t gsm_gprs_httpRead(uint16_t len)
 bool gsm_gprs_httpTerminate(void)
 {
   if (gsm.gprs.connected == false)
+  {
+    gsm_printf("[GSM] gprs_httpTerminate() failed!\r\n");
     return false;
+  }
   if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] gprs_httpTerminate() failed!\r\n");
     return false;
+  }
   if (gsm_command("AT+HTTPTERM\r\n", 1000, NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") == 1)
   {
+    gsm_printf("[GSM] gprs_httpTerminate() done\r\n");
     gsm_unlock();
     return true;
   }
+  gsm_printf("[GSM] gprs_httpTerminate() failed!\r\n");
   gsm_unlock();
   return false;
 }
@@ -267,9 +351,15 @@ gsm_ftp_error_t gsm_gprs_ftpLogin(const char *ftpAddress, const char *ftpUserNam
     uint16_t port)
 {
   if (gsm.gprs.connected == false)
+  {
+    gsm_printf("[GSM] gprs_ftpLogin() failed!\r\n");
     return false;
+  }
   if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] gprs_ftpLogin() failed!\r\n");
     return false;
+  }
   gsm_ftp_error_t ret = gsm_ftp_error_error;
   char str[128];
   do
@@ -292,6 +382,7 @@ gsm_ftp_error_t gsm_gprs_ftpLogin(const char *ftpAddress, const char *ftpUserNam
       break;
     ret = gsm_ftp_error_none;
   } while (0);
+  gsm_printf("[GSM] gprs_ftpLogin() done\r\n");
   gsm_unlock();
   return ret;
 }
@@ -300,9 +391,15 @@ gsm_ftp_error_t gsm_gprs_ftpUploadBegin(bool asciiFile, bool append, const char 
     const uint8_t *data, uint16_t len)
 {
   if (gsm.gprs.connected == false)
+  {
+    gsm_printf("[GSM] gprs_ftpUploadBegin(%s/%s) failed!\r\n", path, fileName);
     return false;
+  }
   if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] gprs_ftpUploadBegin(%s/%s) failed!\r\n", path, fileName);
     return gsm_ftp_error_error;
+  }
   char *s;
   char str[128];
   char answer[64];
@@ -352,6 +449,7 @@ gsm_ftp_error_t gsm_gprs_ftpUploadBegin(bool asciiFile, bool append, const char 
     gsm_command("", 120 * 1000, NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n");
     error = gsm_ftp_error_none;
   } while (0);
+  gsm_printf("[GSM] gprs_ftpUploadBegin(%s/%s) done\r\n", path, fileName);
   gsm_unlock();
   return error;
 }
@@ -359,9 +457,15 @@ gsm_ftp_error_t gsm_gprs_ftpUploadBegin(bool asciiFile, bool append, const char 
 gsm_ftp_error_t gsm_gprs_ftpUpload(const uint8_t *data, uint16_t len)
 {
   if (gsm.gprs.connected == false)
+  {
+    gsm_printf("[GSM] gprs_ftpUpload() failed!\r\n");
     return gsm_ftp_error_error;
+  }
   if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] gprs_ftpUpload() failed!\r\n");
     return gsm_ftp_error_error;
+  }
   char *s;
   char str[128];
   char answer[64];
@@ -382,6 +486,7 @@ gsm_ftp_error_t gsm_gprs_ftpUpload(const uint8_t *data, uint16_t len)
       break;
     error = gsm_ftp_error_none;
   } while (0);
+  gsm_printf("[GSM] gprs_ftpUpload() done\r\n");
   gsm_unlock();
   return error;
 }
@@ -389,14 +494,22 @@ gsm_ftp_error_t gsm_gprs_ftpUpload(const uint8_t *data, uint16_t len)
 gsm_ftp_error_t gsm_gprs_ftpUploadEnd(void)
 {
   if (gsm.gprs.connected == false)
+  {
+    gsm_printf("[GSM] gprs_ftpUploadEnd() failed!\r\n");
     return gsm_ftp_error_error;
+  }
   if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] gprs_ftpUploadEnd() failed!\r\n");
     return gsm_ftp_error_error;
+  }
   if (gsm_command("AT+FTPPUT=2,0\r\n", 5000, NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") != 1)
   {
+    gsm_printf("[GSM] gprs_ftpUploadEnd() failed!\r\n");
     gsm_unlock();
     return gsm_ftp_error_error;
   }
+  gsm_printf("[GSM] gprs_ftpUploadEnd() done\r\n");
   gsm_unlock();
   return gsm_ftp_error_none;
 }
@@ -404,9 +517,15 @@ gsm_ftp_error_t gsm_gprs_ftpUploadEnd(void)
 gsm_ftp_error_t gsm_gprs_ftpExtUploadBegin(bool asciiFile, bool append, const char *path, const char *fileName)
 {
   if (gsm.gprs.connected == false)
+  {
+    gsm_printf("[GSM] gprs_ftpExtUploadBegin() failed!\r\n");
     return gsm_ftp_error_error;
+  }
   if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] gprs_ftpExtUploadBegin() failed!\r\n");
     return gsm_ftp_error_error;
+  }
   gsm_ftp_error_t error = gsm_ftp_error_error;
   char str[128];
   do
@@ -435,6 +554,7 @@ gsm_ftp_error_t gsm_gprs_ftpExtUploadBegin(bool asciiFile, bool append, const ch
     gsm.gprs.ftpExtOffset = 0;
     error = gsm_ftp_error_none;
   } while (0);
+  gsm_printf("[GSM] gprs_ftpExtUploadBegin() done. answer: %d\r\n", error);
   gsm_unlock();
   return error;
 }
@@ -442,9 +562,15 @@ gsm_ftp_error_t gsm_gprs_ftpExtUploadBegin(bool asciiFile, bool append, const ch
 gsm_ftp_error_t gsm_gprs_ftpExtUpload(uint8_t *data, uint16_t len)
 {
   if (gsm.gprs.connected == false)
+  {
+    gsm_printf("[GSM] gprs_ftpExtUpload() failed!\r\n");
     return false;
+  }
   if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] gprs_ftpExtUpload() failed!\r\n");
     return gsm_ftp_error_error;
+  }
   gsm_ftp_error_t error = gsm_ftp_error_error;
   char str[64];
   char answer[64];
@@ -467,6 +593,7 @@ gsm_ftp_error_t gsm_gprs_ftpExtUpload(uint8_t *data, uint16_t len)
     gsm.gprs.ftpExtOffset += len;
     error = gsm_ftp_error_none;
   } while (0);
+  gsm_printf("[GSM] gprs_ftpExtUpload() done. answer: %d\r\n", error);
   gsm_unlock();
   return error;
 }
@@ -474,9 +601,15 @@ gsm_ftp_error_t gsm_gprs_ftpExtUpload(uint8_t *data, uint16_t len)
 gsm_ftp_error_t gsm_gprs_ftpExtUploadEnd(void)
 {
   if (gsm.gprs.connected == false)
+  {
+    gsm_printf("[GSM] gprs_ftpExtUploadEnd() failed!\r\n");
     return gsm_ftp_error_error;
+  }
   if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] gprs_ftpExtUploadEnd() failed!\r\n");
     return gsm_ftp_error_error;
+  }
   gsm_ftp_error_t error = gsm_ftp_error_error;
   char answer[64];
   do
@@ -490,6 +623,7 @@ gsm_ftp_error_t gsm_gprs_ftpExtUploadEnd(void)
     error = (gsm_ftp_error_t) atoi(s);
     gsm_command("AT+FTPEXTPUT=0\r\n", 1000, NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n");
   } while (0);
+  gsm_printf("[GSM] gprs_ftpExtUploadEnd() done. answer: %d\r\n", error);
   gsm_unlock();
   return error;
 }
@@ -497,9 +631,15 @@ gsm_ftp_error_t gsm_gprs_ftpExtUploadEnd(void)
 gsm_ftp_error_t gsm_gprs_ftpCreateDir(const char *path)
 {
   if (gsm.gprs.connected == false)
+  {
+    gsm_printf("[GSM] gprs_ftpCreateDir(%s) failed!\r\n", path);
     return gsm_ftp_error_error;
+  }
   if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] gprs_ftpCreateDir(%s) failed!\r\n", path);
     return gsm_ftp_error_error;
+  }
   gsm_ftp_error_t error = gsm_ftp_error_error;
   char str[128];
   do
@@ -515,6 +655,7 @@ gsm_ftp_error_t gsm_gprs_ftpCreateDir(const char *path)
     s++;
     error = (gsm_ftp_error_t) atoi(s);
   } while (0);
+  gsm_printf("[GSM] gprs_ftpCreateDir(%s) done. answer: %d\r\n", path, error);
   gsm_unlock();
   return error;
 }
@@ -522,9 +663,15 @@ gsm_ftp_error_t gsm_gprs_ftpCreateDir(const char *path)
 gsm_ftp_error_t gsm_gprs_ftpRemoveDir(const char *path)
 {
   if (gsm.gprs.connected == false)
+  {
+    gsm_printf("[GSM] gprs_ftpRemoveDir(%s) failed!\r\n", path);
     return gsm_ftp_error_error;
+  }
   if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] gprs_ftpRemoveDir(%s) failed!\r\n", path);
     return gsm_ftp_error_error;
+  }
   gsm_ftp_error_t error = gsm_ftp_error_error;
   char str[128];
   do
@@ -540,6 +687,7 @@ gsm_ftp_error_t gsm_gprs_ftpRemoveDir(const char *path)
     s++;
     error = (gsm_ftp_error_t) atoi(s);
   } while (0);
+  gsm_printf("[GSM] gprs_ftpRemoveDir(%s) done. answer: %d\r\n", path, error);
   gsm_unlock();
   return error;
 }
@@ -547,9 +695,15 @@ gsm_ftp_error_t gsm_gprs_ftpRemoveDir(const char *path)
 uint32_t gsm_gprs_ftpGetSize(const char *path, const char *name)
 {
   if (gsm.gprs.connected == false)
+  {
+    gsm_printf("[GSM] gprs_ftpGetSize(%s, %s) failed!\r\n", path, name);
     return 0;
+  }
   if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] gprs_ftpGetSize(%s, %s) failed!\r\n", path, name);
     return 0;
+  }
   uint32_t error = 0;
   char str[128];
   do
@@ -575,6 +729,7 @@ uint32_t gsm_gprs_ftpGetSize(const char *path, const char *name)
       error = atoi(s);
     }
   } while (0);
+  gsm_printf("[GSM] gprs_ftpGetSize(%s, %s) done. answer: %ld\r\n", path, name, error);
   gsm_unlock();
   return error;
 }
@@ -582,9 +737,15 @@ uint32_t gsm_gprs_ftpGetSize(const char *path, const char *name)
 gsm_ftp_error_t gsm_gprs_ftpRemove(const char *path, const char *name)
 {
   if (gsm.gprs.connected == false)
+  {
+    gsm_printf("[GSM] gprs_ftpRemove(%s, %s) failed!\r\n", path, name);
     return gsm_ftp_error_error;
+  }
   if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] gprs_ftpRemove(%s, %s) failed!\r\n", path, name);
     return gsm_ftp_error_error;
+  }
   gsm_ftp_error_t error = gsm_ftp_error_error;
   char str[128];
   do
@@ -603,6 +764,7 @@ gsm_ftp_error_t gsm_gprs_ftpRemove(const char *path, const char *name)
     s++;
     error = (gsm_ftp_error_t) atoi(s);
   } while (0);
+  gsm_printf("[GSM] gprs_ftpRemove(%s, %s) done. answer: %d\r\n", path, name, error);
   gsm_unlock();
   return error;
 }
@@ -610,9 +772,15 @@ gsm_ftp_error_t gsm_gprs_ftpRemove(const char *path, const char *name)
 gsm_ftp_error_t gsm_gprs_ftpIsExistFolder(const char *path)
 {
   if (gsm.gprs.connected == false)
+  {
+    gsm_printf("[GSM] gprs_ftpIsExistFolder(%s) failed!\r\n", path);
     return gsm_ftp_error_error;
+  }
   if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] gprs_ftpIsExistFolder(%s) failed!\r\n", path);
     return gsm_ftp_error_error;
+  }
   gsm_ftp_error_t error = gsm_ftp_error_error;
   char str[strlen(path) + 16];
   char answer[32];
@@ -638,6 +806,7 @@ gsm_ftp_error_t gsm_gprs_ftpIsExistFolder(const char *path)
       break;
     }
   } while (0);
+  gsm_printf("[GSM] gprs_ftpIsExistFolder(%s) done. answer: %d\r\n", path, error);
   gsm_unlock();
   return error;
 }
@@ -645,15 +814,23 @@ gsm_ftp_error_t gsm_gprs_ftpIsExistFolder(const char *path)
 bool gsm_gprs_ftpIsBusy(void)
 {
   if (gsm.gprs.connected == false)
+  {
+    gsm_printf("[GSM] gprs_ftpIsBusy() failed!\r\n");
     return false;
+  }
   if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] gprs_ftpIsBusy() failed!\r\n");
     return false;
+  }
   if (gsm_command("AT+FTPSTATE\r\n", 75000, NULL, 0, 3, "\r\n+FTPSTATE: 0\r\n", "\r\n+FTPSTATE: 1\r\n",
       "\r\nERROR\r\n") == 1)
   {
+    gsm_printf("[GSM] gprs_ftpIsBusy() done. true\r\n");
     gsm_unlock();
     return true;
   }
+  gsm_printf("[GSM] gprs_ftpIsBusy() done. false\r\n");
   gsm_unlock();
   return false;
 }
@@ -661,14 +838,22 @@ bool gsm_gprs_ftpIsBusy(void)
 gsm_ftp_error_t gsm_gprs_ftpQuit(void)
 {
   if (gsm.gprs.connected == false)
+  {
+    gsm_printf("[GSM] gprs_ftpQuit() failed!\r\n");
     return gsm_ftp_error_error;
+  }
   if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] gprs_ftpQuit() failed!\r\n");
     return gsm_ftp_error_error;
+  }
   if (gsm_command("AT+FTPQUIT\r\n", 5000, NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") != 1)
   {
+    gsm_printf("[GSM] gprs_ftpQuit() failed!\r\n");
     gsm_unlock();
     return gsm_ftp_error_error;
   }
+  gsm_printf("[GSM] gprs_ftpQuit() done\r\n");
   gsm_unlock();
   return gsm_ftp_error_none;
 }
@@ -676,16 +861,24 @@ gsm_ftp_error_t gsm_gprs_ftpQuit(void)
 bool gsm_gprs_ntpServer(char *server, int8_t time_zone_in_quarter)
 {
   if (gsm.gprs.connected == false)
+  {
+    gsm_printf("[GSM] gprs_ntpServer(%s, %d) failed!\r\n", server, time_zone_in_quarter);
     return false;
+  }
   if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] gprs_ntpServer(%s, %d) failed!\r\n", server, time_zone_in_quarter);
     return false;
+  }
   char str[64];
   sprintf(str, "AT+CNTP=\"%s\",%d\r\n", server, time_zone_in_quarter);
   if (gsm_command(str, 10000 , NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") != 1)
   {
+    gsm_printf("[GSM] gprs_ntpServer(%s, %d) failed!\r\n", server, time_zone_in_quarter);
     gsm_unlock();
     return false;
   }
+  gsm_printf("[GSM] gprs_ntpServer(%s, %d) done\r\n", server, time_zone_in_quarter);
   gsm_unlock();
   return true;
 }
@@ -693,14 +886,22 @@ bool gsm_gprs_ntpServer(char *server, int8_t time_zone_in_quarter)
 bool gsm_gprs_ntpSyncTime(void)
 {
   if (gsm.gprs.connected == false)
+  {
+    gsm_printf("[GSM] gprs_ntpSyncTime() failed!\r\n");
     return false;
+  }
   if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] gprs_ntpSyncTime() failed!\r\n");
     return false;
+  }
   if (gsm_command("AT+CNTP\r\n", 10000, NULL, 0, 2, "\r\n+CNTP: 1\r\n", "\r\nERROR\r\n") != 1)
   {
+    gsm_printf("[GSM] gprs_ntpSyncTime() failed!\r\n");
     gsm_unlock();
     return false;
   }
+  gsm_printf("[GSM] gprs_ntpSyncTime() done\r\n");
   gsm_unlock();
   return true;
 }
@@ -708,16 +909,24 @@ bool gsm_gprs_ntpSyncTime(void)
 bool gsm_gprs_ntpGetTime(char *string)
 {
   if (string == NULL)
+  {
+    gsm_printf("[GSM] gprs_ntpGetTime() failed!\r\n");
     return false;
+  }
   if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] gprs_ntpGetTime() failed!\r\n");
     return false;
+  }
   char str[32];
   if (gsm_command("AT+CCLK?\r\n", 10000, str, sizeof(str), 2, "\r\n+CCLK:", "\r\nERROR\r\n") != 1)
   {
+    gsm_printf("[GSM] gprs_ntpGetTime() failed!\r\n");
     gsm_unlock();
     return false;
   }
   sscanf(str, "\r\n+CCLK: \"%[^\"\r\n]", string);
+  gsm_printf("[GSM] gprs_ntpGetTime() done. %s\r\n", string);
   gsm_unlock();
   return true;
 }

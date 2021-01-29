@@ -5,16 +5,21 @@
 bool gsm_msg_updateStorage(void)
 {
   if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] msg_updateStorage() failed!\r\n");
     return false;
+  }
   char str[64];
   char s[5];
   if (gsm_command("AT+CPMS?\r\n", 1000 , str, sizeof(str), 2, "\r\n+CPMS:", "\r\nERROR\r\n") != 1)
   {
+    gsm_printf("[GSM] msg_updateStorage() failed!\r\n");
     gsm_unlock();
     return false;
   }
   if (sscanf(str, "\r\n+CPMS: \"%[^\"]\",%hd,%hd,", s, &gsm.msg.storageUsed, &gsm.msg.storageTotal) != 3)
   {
+    gsm_printf("[GSM] msg_updateStorage() failed!\r\n");
     gsm_unlock();
     return false;
   }
@@ -30,6 +35,7 @@ bool gsm_msg_updateStorage(void)
     gsm.msg.storage = gsm_msg_store_simcard_or_module;
   else
     gsm.msg.storage = gsm_msg_store_error;
+  gsm_printf("[GSM] msg_updateStorage() done\r\n");
   gsm_unlock();
   return true;
 }
@@ -55,16 +61,25 @@ uint16_t gsm_msg_getStorageFree(void)
 bool gsm_msg_textMode(bool on_off, bool integer)
 {
   if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] msg_textMode() failed!\r\n");
     return false;
+  }
   if (on_off)
   {
     if (gsm_command("AT+CMGF=1\r\n", 1000, NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") == 1)
     {
       gsm.msg.textMode = 1;
       if (integer == false)
+      {
         gsm_command("AT+CSMP=17,167,0,0\r\n", 1000, NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n");
+        gsm_printf("[GSM] msg_textMode() done. text: true, integer: false \r\n");
+      }
       else
+      {
         gsm_command("AT+CSMP=17,167,0,8\r\n", 1000, NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n");
+        gsm_printf("[GSM] msg_textMode() done. text: true, integer: true \r\n");
+      }
       gsm_unlock();
       return true;
     }
@@ -74,10 +89,12 @@ bool gsm_msg_textMode(bool on_off, bool integer)
     if (gsm_command("AT+CMGF=0\r\n", 1000, NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") == 1)
     {
       gsm.msg.textMode = 0;
+      gsm_printf("[GSM] msg_textMode() done. text: false\r\n");
       gsm_unlock();
       return true;
     }
   }
+  gsm_printf("[GSM] msg_textMode() failed!\r\n");
   gsm_unlock();
   return false;
 }
@@ -85,23 +102,29 @@ bool gsm_msg_textMode(bool on_off, bool integer)
 bool gsm_msg_isTextMode(void)
 {
   if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] msg_isTextMode() failed!\r\n");
     return false;
+  }
   uint8_t ans;
   ans = gsm_command("AT+CMGF?\r\n", 1000, NULL, 0, 3, "\r\n+CMGF: 0\r\n", "\r\n+CMGF: 1\r\n", "\r\nERROR\r\n");
-  if (ans == 0)
+  if (ans == 1)
   {
     gsm.msg.textMode = 0;
+    gsm_printf("[GSM] msg_isTextMode() done. false\r\n");
     gsm_unlock();
     return false;
   }
   else if (ans == 1)
   {
     gsm.msg.textMode = 1;
+    gsm_printf("[GSM] msg_isTextMode() done. true\r\n");
     gsm_unlock();
     return true;
   }
   else
   {
+    gsm_printf("[GSM] msg_isTextMode() failed!\r\n");
     gsm_unlock();
     return false;
   }
@@ -110,14 +133,19 @@ bool gsm_msg_isTextMode(void)
 bool gsm_msg_deleteAll(void)
 {
   if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] msg_deleteAll() failed!\r\n");
     return false;
+  }
   if (gsm.msg.textMode)
   {
     if (gsm_command("AT+CMGDA=\"DEL ALL\"\r\n", 25000 , NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") != 1)
     {
+      gsm_printf("[GSM] msg_deleteAll() failed!\r\n");
       gsm_unlock();
       return false;
     }
+    gsm_printf("[GSM] msg_deleteAll() done\r\n");
     gsm_unlock();
     return true;
   }
@@ -125,9 +153,11 @@ bool gsm_msg_deleteAll(void)
   {
     if (gsm_command("AT+CMGDA=6\r\n", 25000 , NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") != 1)
     {
+      gsm_printf("[GSM] msg_deleteAll() failed!\r\n");
       gsm_unlock();
       return false;
     }
+    gsm_printf("[GSM] msg_deleteAll() done\r\n");
     gsm_unlock();
     return true;
   }
@@ -136,24 +166,36 @@ bool gsm_msg_deleteAll(void)
 bool gsm_msg_delete(uint16_t index)
 {
   if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] msg_delete(%d) failed!\r\n", index);
     return false;
+  }
   char str[32];
   sprintf(str, "AT+CMGD=%d\r\n", index);
   if (gsm_command(str, 5000 , NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") == 1)
   {
+    gsm_printf("[GSM] msg_delete(%d) done\r\n", index);
     gsm_unlock();
     return true;
   }
+  gsm_printf("[GSM] msg_delete(%d) failed!\r\n", index);
   gsm_unlock();
   return false;
 }
 //###############################################################################################################
 bool gsm_msg_send(const char *number, const char *msg)
 {
+  gsm_printf("[GSM] msg_send() begin\r\n");
   if ((number == NULL) || (msg == NULL))
+  {
+    gsm_printf("[GSM] msg_send() failed!\r\n");
     return false;
+  }
   if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] msg_send() failed!\r\n");
     return false;
+  }
   if (gsm.msg.textMode)
   {
     char str[32];
@@ -162,20 +204,24 @@ bool gsm_msg_send(const char *number, const char *msg)
     {
       sprintf(str, "%c", 27);
       gsm_command(str, 1000, NULL, 0, 0);
+      gsm_printf("[GSM] msg_send() failed!\r\n");
       gsm_unlock();
-      return 0;
+      return false;
     }
     sprintf((char*) gsm.buffer, "%s%c", msg, 26);
     if (gsm_command((char*)gsm.buffer, 80000 , NULL, 0, 2, "\r\n+CMGS:", "\r\nERROR\r\n") != 1)
     {
+      gsm_printf("[GSM] msg_send() failed!\r\n");
       gsm_unlock();
       return false;
     }
+    gsm_printf("[GSM] msg_send() done\r\n");
     gsm_unlock();
     return true;
   }
   else
   {
+    gsm_printf("[GSM] msg_send() failed!\r\n");
     gsm_unlock();
     return false;
   }
@@ -184,7 +230,10 @@ bool gsm_msg_send(const char *number, const char *msg)
 bool gsm_msg_selectStorage(gsm_msg_store_t gsm_msg_store_)
 {
   if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] msg_selectStorage() failed!\r\n");
     return false;
+  }
   char str[64];
   switch (gsm_msg_store_)
   {
@@ -204,15 +253,18 @@ bool gsm_msg_selectStorage(gsm_msg_store_t gsm_msg_store_)
     sprintf(str, "AT+CPMS=\"MT\",\"MT\",\"MT\"\r\n");
     break;
   default:
+    gsm_printf("[GSM] msg_selectStorage() failed!\r\n");
     gsm_unlock();
     return false;
   }
   if (gsm_command(str, 1000 , NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") != 1)
   {
+    gsm_printf("[GSM] msg_selectStorage() failed!\r\n");
     gsm_unlock();
     return false;
   }
   gsm.msg.storage = gsm_msg_store_;
+  gsm_printf("[GSM] msg_selectStorage() done\r\n");
   gsm_unlock();
   gsm_msg_updateStorage();
   return true;
@@ -221,7 +273,10 @@ bool gsm_msg_selectStorage(gsm_msg_store_t gsm_msg_store_)
 bool gsm_msg_selectCharacterSet(gsm_msg_chset_t gsm_msg_chSet_)
 {
   if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] msg_selectCharacterSet() failed!\r\n");
     return false;
+  }
   char str[64];
   switch (gsm_msg_chSet_)
   {
@@ -247,15 +302,18 @@ bool gsm_msg_selectCharacterSet(gsm_msg_chset_t gsm_msg_chSet_)
     sprintf(str, "AT+CSCS=\"PCDN\"\r\n");
     break;
   default:
+    gsm_printf("[GSM] msg_selectCharacterSet() failed!\r\n");
     gsm_unlock();
     return false;
   }
   if (gsm_command(str, 1000 , NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") != 1)
   {
+    gsm_printf("[GSM] msg_selectCharacterSet() failed!\r\n");
     gsm_unlock();
     return false;
   }
   gsm.msg.characterSet = gsm_msg_chSet_;
+  gsm_printf("[GSM] msg_selectCharacterSet() done\r\n");
   gsm_unlock();
   return true;
 }
@@ -263,7 +321,10 @@ bool gsm_msg_selectCharacterSet(gsm_msg_chset_t gsm_msg_chSet_)
 bool gsm_msg_read(uint16_t index)
 {
   if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] msg_read(%d) failed!\r\n", index);
     return false;
+  }
   //  +++ text mode
   if (gsm.msg.textMode == 1)
   {
@@ -273,6 +334,7 @@ bool gsm_msg_read(uint16_t index)
     if (gsm_command(str, 5000, (char* )gsm.buffer, sizeof(gsm.buffer), 3, "\r\n+CMGR:", "\r\nOK\r\n", "\r\nERROR\r\n")
         != 1)
     {
+      gsm_printf("[GSM] msg_read(%d) failed!\r\n", index);
       gsm_unlock();
       return false;
     }
@@ -297,11 +359,13 @@ bool gsm_msg_read(uint16_t index)
         {
           strncpy((char*) &gsm.buffer[0], s, end - s);
           memset(&gsm.buffer[end - s], 0, sizeof(gsm.buffer) - (end - s));
+          gsm_printf("[GSM] msg_read(%d) done\r\n", index);
           gsm_unlock();
           return true;
         }
         else
         {
+          gsm_printf("[GSM] msg_read(%d) failed!\r\n", index);
           gsm_unlock();
           return false;
         }
@@ -314,11 +378,13 @@ bool gsm_msg_read(uint16_t index)
   //  +++ pdu mode
   else
   {
-
+    gsm_printf("[GSM] msg_read(%d) failed!\r\n", index);
     gsm_unlock();
     return false;
   }
   //  --- pdu mode
+
+  gsm_printf("[GSM] msg_read(%d) failed!\r\n", index);
   gsm_unlock();
   return false;
 }
