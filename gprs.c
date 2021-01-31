@@ -353,12 +353,12 @@ gsm_ftp_error_t gsm_gprs_ftpLogin(const char *ftpAddress, const char *ftpUserNam
   if (gsm.gprs.connected == false)
   {
     gsm_printf("[GSM] gprs_ftpLogin() failed!\r\n");
-    return false;
+    return gsm_ftp_error_error;
   }
   if (gsm_lock(10000) == false)
   {
     gsm_printf("[GSM] gprs_ftpLogin() failed!\r\n");
-    return false;
+    return gsm_ftp_error_error;
   }
   gsm_ftp_error_t ret = gsm_ftp_error_error;
   char str[128];
@@ -393,7 +393,7 @@ gsm_ftp_error_t gsm_gprs_ftpUploadBegin(bool asciiFile, bool append, const char 
   if (gsm.gprs.connected == false)
   {
     gsm_printf("[GSM] gprs_ftpUploadBegin(%s/%s) failed!\r\n", path, fileName);
-    return false;
+    return gsm_ftp_error_error;
   }
   if (gsm_lock(10000) == false)
   {
@@ -564,7 +564,7 @@ gsm_ftp_error_t gsm_gprs_ftpExtUpload(uint8_t *data, uint16_t len)
   if (gsm.gprs.connected == false)
   {
     gsm_printf("[GSM] gprs_ftpExtUpload() failed!\r\n");
-    return false;
+    return gsm_ftp_error_error;
   }
   if (gsm_lock(10000) == false)
   {

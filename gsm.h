@@ -197,7 +197,7 @@ bool            gsm_init(void);
 void            gsm_loop(void);
 bool            gsm_power(bool on_off);
 bool            gsm_lock(uint32_t timeout_ms);
-void            gsm_unlock();
+void            gsm_unlock(void);
 
 bool            gsm_registered(void);
 bool            gsm_setDefault(void);

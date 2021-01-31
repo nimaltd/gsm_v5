@@ -117,7 +117,6 @@ void gsm_init_commands(void)
 #if (_GSM_BLUETOOTH == 1)
 
 #endif
-
 }
 //###############################################################################################################
 bool gsm_lock(uint32_t timeout_ms)
@@ -225,7 +224,7 @@ void gsm_loop(void)
     //  --- simcard check
 
     //  +++ network check
-    if (gsm.status.netChange == 1)
+    if (gsm.status.netChange == 1 && gsm.status.power == 1)
     {
       gsm.status.netChange = 0;
       if (gsm.status.netReg == 1)
@@ -279,7 +278,7 @@ void gsm_loop(void)
   //  --- 1s timer  ######################
 
   //  +++ 10s timer ######################
-  if (HAL_GetTick() - gsm_time_10s > 10000)
+  if ((HAL_GetTick() - gsm_time_10s > 10000) && (gsm.status.power == 1))
   {
     gsm_time_10s = HAL_GetTick();
 
@@ -349,7 +348,7 @@ void gsm_loop(void)
   //  --- 10s timer ######################
 
   //  +++ 60s timer  ######################
-  if (HAL_GetTick() - gsm_time_60s > 60000)
+  if ((HAL_GetTick() - gsm_time_60s > 60000) && (gsm.status.power == 1))
   {
     gsm_time_60s = HAL_GetTick();
 
