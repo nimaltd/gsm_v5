@@ -177,7 +177,7 @@ typedef struct
 #if (_GSM_CALL == 1)
   gsm_call_t        call;
 #endif
-#if (_GSM_CALL == 1)
+#if (_GSM_MSG == 1)
   gsm_msg_t         msg;
 #endif
 #if (_GSM_GPRS == 1)
