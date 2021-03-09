@@ -42,7 +42,7 @@ bool gsm_gprs_connect(void)
     return false;
   }
   char str[32];
-  gsm_command("AT+SAPBR=0,1\r\n", 1000, NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n");
+  //gsm_command("AT+SAPBR=0,1\r\n", 1000, NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n");
   if (gsm_command("AT+SAPBR=1,1\r\n", 85000, NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") != 1)
   {
     gsm_printf("[GSM] gprs_connect() failed!\r\n");
@@ -224,7 +224,7 @@ int16_t gsm_gprs_httpGet(const char *url, bool ssl, uint16_t timeout_ms)
     }
     if (gsm_command("AT+HTTPACTION=0\r\n", timeout_ms , str, sizeof(str), 2, "\r\n+HTTPACTION:", "\r\nERROR\r\n") != 1)
       break;
-    sscanf(str, "\r\n+HTTPACTION: 0,%hd,%ld\r\n", &gsm.gprs.code, &gsm.gprs.dataLen);
+    sscanf(str, "\r\n+HTTPACTION: 0,%hd,%d\r\n", &gsm.gprs.code, &gsm.gprs.dataLen);
   } while (0);
   gsm_printf("[GSM] gprs_httpGet(%s) done. answer: %d\r\n", url, gsm.gprs.code);
   gsm_unlock();
@@ -267,7 +267,7 @@ int16_t gsm_gprs_httpPost(const char *url, bool ssl, uint16_t timeout_ms)
     }
     if (gsm_command("AT+HTTPACTION=1\r\n", timeout_ms , str, sizeof(str), 2, "\r\n+HTTPACTION:", "\r\nERROR\r\n") != 1)
       break;
-    sscanf(str, "\r\n+HTTPACTION: 1,%hd,%ld\r\n", &gsm.gprs.code, &gsm.gprs.dataLen);
+    sscanf(str, "\r\n+HTTPACTION: 1,%hd,%d\r\n", &gsm.gprs.code, &gsm.gprs.dataLen);
   } while (0);
   gsm_printf("[GSM] gprs_httpPost(%s) done. answer: %d\r\n", url, gsm.gprs.code);
   gsm_unlock();
@@ -295,7 +295,7 @@ uint16_t gsm_gprs_httpRead(uint16_t len)
   char str[32];
   if (len >= sizeof(gsm.buffer))
     len = sizeof(gsm.buffer);
-  sprintf(str, "AT+HTTPREAD=%ld,%d\r\n", gsm.gprs.dataCurrent, len);
+  sprintf(str, "AT+HTTPREAD=%d,%d\r\n", gsm.gprs.dataCurrent, len);
   if (gsm_command(str, 1000 , (char*)gsm.buffer, sizeof(gsm.buffer), 2, "\r\n+HTTPREAD: ", "\r\nERROR\r\n") != 1)
   {
     gsm_printf("[GSM] gprs_httpRead() failed!\r\n");
@@ -576,7 +576,7 @@ gsm_ftp_error_t gsm_gprs_ftpExtUpload(uint8_t *data, uint16_t len)
   char answer[64];
   do
   {
-    sprintf(str, "AT+FTPEXTPUT=2,%ld,%d,5000\r\n", gsm.gprs.ftpExtOffset, len);
+    sprintf(str, "AT+FTPEXTPUT=2,%d,%d,5000\r\n", gsm.gprs.ftpExtOffset, len);
     if (gsm_command(str, 5000, answer, sizeof(answer), 2, "\r\n+FTPEXTPUT: ", "\r\nERROR\r\n") != 1)
       break;
     char *s = strchr(answer, ',');
@@ -587,7 +587,7 @@ gsm_ftp_error_t gsm_gprs_ftpExtUpload(uint8_t *data, uint16_t len)
     if (d != len)
       break;
     gsm_delay(100);
-    gsm_transmit((uint8_t* )data, len);
+    gsm_transmit(data, len);
     if (gsm_command("", 5000 , NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") != 1)
       break;
     gsm.gprs.ftpExtOffset += len;

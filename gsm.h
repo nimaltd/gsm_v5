@@ -11,10 +11,11 @@
  */
 
 /*
- * Version:	5.0.0
+ * Version:	5.0.1
  *
  * History:
  *
+ * (5.0.1): Fix GPRS connecting. 
  * (5.0.0):	Rewrite again. Support NONE-RTOS, RTOS V1 and RTOS V2.
  */
  

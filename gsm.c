@@ -193,7 +193,7 @@ void gsm_loop(void)
 
 #if (_GSM_CALL == 1 || _GSM_MSG == 1 || _GSM_GPRS == 1)
     //  +++ simcard check
-    if (gsm.status.power == 1 && gsm.status.simcardChecked == 0)
+    if ((gsm.status.power == 1) && (gsm.status.simcardChecked == 0))
     {
       if (gsm_command("AT+CPIN?\r\n", 1000, str1, sizeof(str1), 2, "\r\n+CPIN:", "\r\nERROR\r\n") == 1)
       {
@@ -224,7 +224,7 @@ void gsm_loop(void)
     //  --- simcard check
 
     //  +++ network check
-    if (gsm.status.netChange == 1 && gsm.status.power == 1)
+    if ((gsm.status.netChange == 1) && (gsm.status.power == 1))
     {
       gsm.status.netChange = 0;
       if (gsm.status.netReg == 1)
@@ -368,7 +368,7 @@ bool gsm_power(bool on_off)
   gsm_printf("[GSM] power(%d) begin\r\n", on_off);
   uint8_t state = 0;
   gsm.status.power = on_off;
-  for (uint8_t i = 0; i < 5; i++)
+  for (uint8_t i = 0; i < 2; i++)
   {
     if (gsm_command("AT\r\n", 1000, NULL, 0, 1, "\r\nOK\r\n") == 1)
     {
@@ -376,7 +376,7 @@ bool gsm_power(bool on_off)
       break;
     }
   }
-  if (on_off == true && state == 1)
+  if ((on_off == true) && (state == 1))
   {
     memset(&gsm.status, 0, sizeof(gsm.status));
     gsm.status.power = 1;
@@ -384,13 +384,13 @@ bool gsm_power(bool on_off)
     gsm_printf("[GSM] power(%d) done\r\n", on_off);
     return true;
   }
-  if (on_off == true && state == 0)
+  if ((on_off == true) && (state == 0))
   {
     memset(&gsm.status, 0, sizeof(gsm.status));
     HAL_GPIO_WritePin(_GSM_KEY_GPIO, _GSM_KEY_PIN, GPIO_PIN_RESET);
-    gsm_delay(1200);
+    gsm_delay(1500);
     HAL_GPIO_WritePin(_GSM_KEY_GPIO, _GSM_KEY_PIN, GPIO_PIN_SET);
-    gsm_delay(2000);
+    gsm_delay(3000);
     for (uint8_t i = 0; i < 5; i++)
     {
       if (gsm_command("AT\r\n", 1000, NULL, 0, 1, "\r\nOK\r\n") == 1)
@@ -413,17 +413,17 @@ bool gsm_power(bool on_off)
       return false;
     }
   }
-  if (on_off == false && state == 0)
+  if ((on_off == false) && (state == 0))
   {
     gsm_printf("[GSM] power(%d) done\r\n", on_off);
     return true;
   }
-  if (on_off == false && state == 1)
+  if ((on_off == false) && (state == 1))
   {
     HAL_GPIO_WritePin(_GSM_KEY_GPIO, _GSM_KEY_PIN, GPIO_PIN_RESET);
-    gsm_delay(1200);
+    gsm_delay(1500);
     HAL_GPIO_WritePin(_GSM_KEY_GPIO, _GSM_KEY_PIN, GPIO_PIN_SET);
-    gsm_delay(2000);
+    gsm_delay(3000);
     gsm_printf("[GSM] power(%d) done\r\n", on_off);
     return true;
   }
