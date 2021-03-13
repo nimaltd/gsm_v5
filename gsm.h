@@ -11,10 +11,11 @@
  */
 
 /*
- * Version:	5.0.1
+ * Version:	5.1.0
  *
  * History:
  *
+ * (5.1.0): Add MQTT. 
  * (5.0.1): Fix GPRS connecting. 
  * (5.0.0):	Rewrite again. Support NONE-RTOS, RTOS V1 and RTOS V2.
  */
@@ -142,6 +143,7 @@ typedef struct
 #if (_GSM_GPRS == 1)
 typedef struct
 {
+  bool              connect;
   bool              connected;
   bool              connectedLast;
   char              ip[16];
@@ -151,6 +153,10 @@ typedef struct
   uint8_t           tcpConnection;
   uint8_t           gotData;
   uint32_t          ftpExtOffset;
+  char              mqttTopic[64];
+  char              mqttMessage[64];
+  uint8_t           mqttData;
+  uint8_t           mqttConnected;
 
 }gsm_gprs_t;
 #endif
@@ -162,7 +168,8 @@ typedef struct
   uint8_t           netReg:1;
   uint8_t           netChange:1;
   uint8_t           simcardChecked:1;
-  uint8_t           powerDown:1;
+  uint8_t           turnOff:1;
+  uint8_t           turnOn:1;
 
 }gsm_status_t;
 
@@ -200,6 +207,7 @@ bool            gsm_power(bool on_off);
 bool            gsm_lock(uint32_t timeout_ms);
 void            gsm_unlock(void);
 
+bool            gsm_setDefault(void);
 bool            gsm_registered(void);
 bool            gsm_setDefault(void);
 bool            gsm_saveProfile(void);
@@ -264,6 +272,11 @@ gsm_ftp_error_t gsm_gprs_ftpQuit(void);
 bool            gsm_gprs_ntpServer(char *server, int8_t time_zone_in_quarter);
 bool            gsm_gprs_ntpSyncTime(void);
 bool            gsm_gprs_ntpGetTime(char *string);
+
+bool            gsm_gprs_mqttConnect(const char *url, uint16_t port, bool cleanFlag, const char *clientID, uint16_t keepAliveSec, const char *user, const char *pass, uint16_t timeoutSec);
+bool            gsm_gprs_mqttSubscribe(const char *topic, bool qos);
+bool            gsm_gprs_mqttUnSubscribe(const char *topic);
+bool            gsm_gprs_mqttPublish(const char *topic, bool qos, bool retain, const char *message);
 //###############################################################################################################
 void            gsm_callback_simcardReady(void);
 void            gsm_callback_simcardPinRequest(void);
@@ -277,5 +290,6 @@ void            gsm_callback_dtmf(char *string, uint8_t len);
 void            gsm_callback_newMsg(char *number, gsm_time_t time, char *msg);
 void            gsm_callback_gprsConnected(void);
 void            gsm_callback_gprsDisconnected(void);
+void            gsm_callback_mqttMessage(char *topic, char *message);
 //###############################################################################################################
 #endif /* _GSM_H_ */

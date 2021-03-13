@@ -10,7 +10,7 @@ void gsm_found(char *found_str)
   str = strstr(found_str, "POWER DOWN\r\n");
   if (str != NULL)
   {
-    gsm.status.powerDown = 1;
+    gsm.status.power = 0;
     return;
   }
   str = strstr(found_str, "\r\n+CREG: ");
@@ -87,6 +87,49 @@ void gsm_found(char *found_str)
     gsm.gprs.gotData = 1;
     return;
   }
+  str = strstr(found_str, "\r\n+SMSTATE: 0\r\n");
+  if (str != NULL)
+  {
+    gsm.gprs.mqttConnected = 0;
+    return;
+  }
+  str = strstr(found_str, "\r\n+SMPUBLISH: ");
+  if (str != NULL)
+  {
+    str = strtok(str, "\"");
+    do
+    {
+      str = strtok(NULL, "\"");
+      if (str == NULL)
+        break;
+      char *endStr;
+      uint8_t len;
+      endStr = strtok(NULL, "\"");
+      if (endStr == NULL)
+        break;
+      len = endStr - str;
+      if (len > sizeof(gsm.gprs.mqttTopic))
+        len = sizeof(gsm.gprs.mqttTopic);
+      if (len > 2)
+        len --;
+      strncpy(gsm.gprs.mqttTopic, str, len);
+      str = strtok(NULL, "\"");
+      if (str == NULL)
+        break;
+      endStr = strtok(NULL, "\"");
+      if (endStr == NULL)
+        break;
+      len = endStr - str;
+      if (len > sizeof(gsm.gprs.mqttMessage))
+        len = sizeof(gsm.gprs.mqttMessage);
+      if (len > 2)
+        len --;
+      strncpy(gsm.gprs.mqttMessage, str, len);
+      gsm.gprs.mqttData = 1;      
+      
+    }while (0);
+    return;
+  }
 #endif
 #if (_GSM_BLUETOOTH == 1)
   str = strstr(found_str, "");
@@ -110,7 +153,7 @@ void gsm_init_commands(void)
   gsm_msg_selectCharacterSet(gsm_msg_chSet_ira);
 #endif
 #if (_GSM_GPRS == 1)
-  gsm_command("AT+CIPSHUT\r\n", 65000, NULL, 0, 2, "\r\nSHUT OK\r\n", "\r\nERROR\r\n");
+  gsm_command("AT+CIPSHUT\r\n", 5000, NULL, 0, 2, "\r\nSHUT OK\r\n", "\r\nERROR\r\n");
   gsm_command("AT+CIPHEAD=0\r\n", 1000, NULL, 0, 1, "\r\nOK\r\n");
   gsm_command("AT+CIPRXGET=1\r\n", 1000, NULL, 0, 1, "\r\nOK\r\n");
 #endif
@@ -168,6 +211,10 @@ bool gsm_init(void)
   if (atc_addSearch(&gsm.atc, "\r\nCLOSED\r\n") == false)
     return false;
   if (atc_addSearch(&gsm.atc, "\r\n+CIPRXGET: 1\r\n") == false)
+    return false;
+   if (atc_addSearch(&gsm.atc, "\r\n+SMSTATE: ") == false)
+    return false;
+   if (atc_addSearch(&gsm.atc, "\r\n+SMPUBLISH: ") == false)
     return false;
 #endif
 #if (_GSM_BLUETOOTH == 1)
@@ -273,7 +320,17 @@ void gsm_loop(void)
       gsm.msg.newMsg = -1;
     }
 #endif
-
+    //  --- msg check
+    
+    //  +++ network check
+#if (_GSM_GPRS == 1)
+    if (gsm.gprs.mqttData == 1)
+    {
+      gsm.gprs.mqttData = 0;
+      gsm_callback_mqttMessage(gsm.gprs.mqttTopic, gsm.gprs.mqttMessage);
+    }
+#endif
+    //  --- network check
   }
   //  --- 1s timer  ######################
 
@@ -310,15 +367,27 @@ void gsm_loop(void)
 
     //  +++ gprs check
 #if (_GSM_GPRS == 1)
-    if (gsm_command("AT+SAPBR=2,1\r\n", 1000, str1, sizeof(str1), 2, "\r\n+SAPBR: 1,", "\r\nERROR\r\n") == 1)
+    if (gsm.gprs.connect)
     {
-      if (sscanf(str1, "\r\n+SAPBR: 1,1,\"%[^\"\r\n]", gsm.gprs.ip) == 1)
+      if (gsm_command("AT+SAPBR=2,1\r\n", 1000, str1, sizeof(str1), 2, "\r\n+SAPBR: 1,", "\r\nERROR\r\n") == 1)
       {
-        if (gsm.gprs.connectedLast == false)
+        if (sscanf(str1, "\r\n+SAPBR: 1,1,\"%[^\"\r\n]", gsm.gprs.ip) == 1)
         {
-          gsm.gprs.connected = true;
-          gsm.gprs.connectedLast = true;
-          gsm_callback_gprsConnected();
+          if (gsm.gprs.connectedLast == false)
+          {
+            gsm.gprs.connected = true;
+            gsm.gprs.connectedLast = true;
+            gsm_callback_gprsConnected();
+          }
+        }
+        else
+        {
+          if (gsm.gprs.connectedLast == true)
+          {
+            gsm.gprs.connected = false;
+            gsm.gprs.connectedLast = false;
+            gsm_callback_gprsDisconnected();
+          }
         }
       }
       else
@@ -329,15 +398,6 @@ void gsm_loop(void)
           gsm.gprs.connectedLast = false;
           gsm_callback_gprsDisconnected();
         }
-      }
-    }
-    else
-    {
-      if (gsm.gprs.connectedLast == true)
-      {
-        gsm.gprs.connected = false;
-        gsm.gprs.connectedLast = false;
-        gsm_callback_gprsDisconnected();
       }
     }
 #endif
@@ -367,19 +427,23 @@ bool gsm_power(bool on_off)
 {
   gsm_printf("[GSM] power(%d) begin\r\n", on_off);
   uint8_t state = 0;
-  gsm.status.power = on_off;
-  for (uint8_t i = 0; i < 2; i++)
+  if (on_off)
   {
-    if (gsm_command("AT\r\n", 1000, NULL, 0, 1, "\r\nOK\r\n") == 1)
-    {
-      state = 1;
-      break;
-    }
+    gsm.status.turnOn = 1;
+    gsm.status.turnOff = 0;  
   }
+  else
+  {
+    gsm.status.turnOn = 0;
+    gsm.status.turnOff = 1;    
+  }
+  if (gsm_command("AT\r\n", 1000, NULL, 0, 1, "\r\nOK\r\n") == 1)
+    state = 1;
   if ((on_off == true) && (state == 1))
   {
     memset(&gsm.status, 0, sizeof(gsm.status));
     gsm.status.power = 1;
+    gsm.status.turnOn = 1;
     gsm_init_commands();
     gsm_printf("[GSM] power(%d) done\r\n", on_off);
     return true;
@@ -387,6 +451,7 @@ bool gsm_power(bool on_off)
   if ((on_off == true) && (state == 0))
   {
     memset(&gsm.status, 0, sizeof(gsm.status));
+    gsm.status.turnOn = 1;
     HAL_GPIO_WritePin(_GSM_KEY_GPIO, _GSM_KEY_PIN, GPIO_PIN_RESET);
     gsm_delay(1500);
     HAL_GPIO_WritePin(_GSM_KEY_GPIO, _GSM_KEY_PIN, GPIO_PIN_SET);
@@ -416,14 +481,18 @@ bool gsm_power(bool on_off)
   if ((on_off == false) && (state == 0))
   {
     gsm_printf("[GSM] power(%d) done\r\n", on_off);
+    gsm.status.power = 0;
+    gsm.status.turnOff = 1;
     return true;
   }
   if ((on_off == false) && (state == 1))
   {
+    gsm.status.turnOff = 1;
     HAL_GPIO_WritePin(_GSM_KEY_GPIO, _GSM_KEY_PIN, GPIO_PIN_RESET);
     gsm_delay(1500);
     HAL_GPIO_WritePin(_GSM_KEY_GPIO, _GSM_KEY_PIN, GPIO_PIN_SET);
     gsm_delay(3000);
+    gsm.status.power = 0;
     gsm_printf("[GSM] power(%d) done\r\n", on_off);
     return true;
   }

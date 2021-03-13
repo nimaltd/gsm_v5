@@ -68,5 +68,10 @@ void gsm_callback_gprsDisconnected(void)
   gsm_printf("CALLBACK GPRS DISCONNECTED\r\n");
 }
 //###############################################################################################################
+void gsm_callback_mqttMessage(char *topic, char *message)
+{
+  
+}
+//###############################################################################################################
 #endif
 #endif
