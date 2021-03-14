@@ -224,7 +224,7 @@ int16_t gsm_gprs_httpGet(const char *url, bool ssl, uint16_t timeout_ms)
       if (gsm_command("AT+HTTPSSL=0\r\n", 1000 , NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") != 1)
         break;
     }
-    if (gsm_command("AT+HTTPACTION=0\r\n", timeout_ms , (char*)gsm.buffer, sizeof((char*)gsm.buffer), 2, "\r\n+HTTPACTION:", "\r\nERROR\r\n") != 1)
+    if (gsm_command("AT+HTTPACTION=0\r\n", timeout_ms , (char*)gsm.buffer, sizeof(gsm.buffer), 2, "\r\n+HTTPACTION:", "\r\nERROR\r\n") != 1)
       break;
     sscanf((char*)gsm.buffer, "\r\n+HTTPACTION: 0,%hd,%d\r\n", &gsm.gprs.code, &gsm.gprs.dataLen);
   } while (0);
@@ -266,7 +266,7 @@ int16_t gsm_gprs_httpPost(const char *url, bool ssl, uint16_t timeout_ms)
       if (gsm_command("AT+HTTPSSL=0\r\n", 1000 , NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") != 1)
         break;
     }
-    if (gsm_command("AT+HTTPACTION=1\r\n", timeout_ms , (char*)gsm.buffer, sizeof((char*)gsm.buffer), 2, "\r\n+HTTPACTION:", "\r\nERROR\r\n") != 1)
+    if (gsm_command("AT+HTTPACTION=1\r\n", timeout_ms , (char*)gsm.buffer, sizeof(gsm.buffer), 2, "\r\n+HTTPACTION:", "\r\nERROR\r\n") != 1)
       break;
     sscanf((char*)gsm.buffer, "\r\n+HTTPACTION: 1,%hd,%d\r\n", &gsm.gprs.code, &gsm.gprs.dataLen);
   } while (0);
@@ -295,8 +295,9 @@ uint16_t gsm_gprs_httpRead(uint16_t len)
   memset(gsm.buffer, 0, sizeof(gsm.buffer));
   if (len >= sizeof(gsm.buffer))
     len = sizeof(gsm.buffer);
-  sprintf((char*)gsm.buffer, "AT+HTTPREAD=%d,%d\r\n", gsm.gprs.dataCurrent, len);
-  if (gsm_command((char*)gsm.buffer, 1000 , (char*)gsm.buffer, sizeof(gsm.buffer), 2, "\r\n+HTTPREAD: ", "\r\nERROR\r\n") != 1)
+  char buf[32];
+  sprintf(buf, "AT+HTTPREAD=%d,%d\r\n", gsm.gprs.dataCurrent, len);
+  if (gsm_command(buf, 1000 , (char*)gsm.buffer, sizeof(gsm.buffer), 2, "\r\n+HTTPREAD: ", "\r\nERROR\r\n") != 1)
   {
     gsm_printf("[GSM] gprs_httpRead() failed!\r\n");
     gsm_unlock();
