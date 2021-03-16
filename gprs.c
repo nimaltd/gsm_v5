@@ -51,7 +51,7 @@ bool gsm_gprs_connect(void)
     return false;
   }
   gsm_delay(2000);
-  if (gsm_command("AT+SAPBR=2,1\r\n", 1000, (char*)gsm.buffer, sizeof((char*)gsm.buffer), 2, "\r\n+SAPBR: 1,1,", "\r\nERROR\r\n") != 1)
+  if (gsm_command("AT+SAPBR=2,1\r\n", 1000, (char*)gsm.buffer, sizeof(gsm.buffer), 2, "\r\n+SAPBR: 1,1,", "\r\nERROR\r\n") != 1)
   {
     gsm_printf("[GSM] gprs_connect() failed!\r\n");
     gsm.gprs.connect = false;
@@ -609,7 +609,7 @@ gsm_ftp_error_t gsm_gprs_ftpExtUploadEnd(void)
   gsm_ftp_error_t error = gsm_ftp_error_error;
   do
   {
-    if (gsm_command("AT+FTPPUT=1\r\n", 75000, (char*)gsm.buffer, sizeof((char*)gsm.buffer), 2, "\r\n+FTPPUT: 1,", "\r\nERROR\r\n") != 1)
+    if (gsm_command("AT+FTPPUT=1\r\n", 75000, (char*)gsm.buffer, sizeof(gsm.buffer), 2, "\r\n+FTPPUT: 1,", "\r\nERROR\r\n") != 1)
       break;
     char *s = strchr((char*)gsm.buffer, ',');
     if (s == NULL)
@@ -641,7 +641,7 @@ gsm_ftp_error_t gsm_gprs_ftpCreateDir(const char *path)
     sprintf((char*)gsm.buffer, "AT+FTPGETPATH=\"%s\"\r\n", path);
     if (gsm_command((char*)gsm.buffer, 1000 , NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") != 1)
       break;
-    if (gsm_command("AT+FTPMKD\r\n", 75000 , (char*)gsm.buffer, sizeof((char*)gsm.buffer), 2, "\r\n+FTPMKD: 1,", "\r\nERROR\r\n") != 1)
+    if (gsm_command("AT+FTPMKD\r\n", 75000 , (char*)gsm.buffer, sizeof(gsm.buffer), 2, "\r\n+FTPMKD: 1,", "\r\nERROR\r\n") != 1)
       break;
     char *s = strchr((char*)gsm.buffer, ',');
     if (s == NULL)
@@ -672,7 +672,7 @@ gsm_ftp_error_t gsm_gprs_ftpRemoveDir(const char *path)
     sprintf((char*)gsm.buffer, "AT+FTPGETPATH=\"%s\"\r\n", path);
     if (gsm_command((char*)gsm.buffer, 1000 , NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") != 1)
       break;
-    if (gsm_command("AT+FTPRMD\r\n", 75000 , (char*)gsm.buffer, sizeof((char*)gsm.buffer), 2, "\r\n+FTPRMD: 1,", "\r\nERROR\r\n") != 1)
+    if (gsm_command("AT+FTPRMD\r\n", 75000 , (char*)gsm.buffer, sizeof(gsm.buffer), 2, "\r\n+FTPRMD: 1,", "\r\nERROR\r\n") != 1)
       break;
     char *s = strchr((char*)gsm.buffer, ',');
     if (s == NULL)
@@ -706,7 +706,7 @@ uint32_t gsm_gprs_ftpGetSize(const char *path, const char *name)
     sprintf((char*)gsm.buffer, "AT+FTPGETNAME=\"%s\"\r\n", name);
     if (gsm_command((char*)gsm.buffer, 1000, NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") != 1)
       break;
-    if (gsm_command("AT+FTPSIZE\r\n", 75000, (char*)gsm.buffer, sizeof((char*)gsm.buffer), 2, "\r\n+FTPSIZE: 1,", "\r\nERROR\r\n") != 1)
+    if (gsm_command("AT+FTPSIZE\r\n", 75000, (char*)gsm.buffer, sizeof(gsm.buffer), 2, "\r\n+FTPSIZE: 1,", "\r\nERROR\r\n") != 1)
       break;
     char *s = strchr((char*)gsm.buffer, ',');
     if (s == NULL)
@@ -747,7 +747,7 @@ gsm_ftp_error_t gsm_gprs_ftpRemove(const char *path, const char *name)
     sprintf((char*)gsm.buffer, "AT+FTPGETNAME=\"%s\"\r\n", name);
     if (gsm_command((char*)gsm.buffer, 1000, NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") != 1)
       break;
-    if (gsm_command("AT+FTPDELE\r\n", 75000, (char*)gsm.buffer, sizeof((char*)gsm.buffer), 2, "\r\n+FTPDELE: 1,", "\r\nERROR\r\n") != 1)
+    if (gsm_command("AT+FTPDELE\r\n", 75000, (char*)gsm.buffer, sizeof(gsm.buffer), 2, "\r\n+FTPDELE: 1,", "\r\nERROR\r\n") != 1)
       break;
     char *s = strchr((char*)gsm.buffer, ',');
     if (s == NULL)
@@ -907,7 +907,7 @@ bool gsm_gprs_ntpGetTime(char *string)
     gsm_printf("[GSM] gprs_ntpGetTime() failed!\r\n");
     return false;
   }
-  if (gsm_command("AT+CCLK?\r\n", 10000, (char*)gsm.buffer, sizeof((char*)gsm.buffer), 2, "\r\n+CCLK:", "\r\nERROR\r\n") != 1)
+  if (gsm_command("AT+CCLK?\r\n", 10000, (char*)gsm.buffer, sizeof(gsm.buffer), 2, "\r\n+CCLK:", "\r\nERROR\r\n") != 1)
   {
     gsm_printf("[GSM] gprs_ntpGetTime() failed!\r\n");
     gsm_unlock();
