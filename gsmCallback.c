@@ -1,3 +1,4 @@
+
 #include "gsm.h"
 #if (_GSM_CALL == 1 || _GSM_MSG == 1 || _GSM_GPRS == 1)
 //###############################################################################################################
@@ -70,7 +71,12 @@ void gsm_callback_gprsDisconnected(void)
 //###############################################################################################################
 void gsm_callback_mqttMessage(char *topic, char *message)
 {
-  
+  gsm_printf("CALLBACK GPRS MQTT TOPIC: %s   ----   MESSAGE: %s\r\n", topic, message);
+}
+//###############################################################################################################
+void gsm_callback_mqttDisconnect(void)
+{
+  gsm_printf("CALLBACK GPRS MQTT DISCONNECT\r\n");
 }
 //###############################################################################################################
 #endif

@@ -40,9 +40,9 @@ bool gsm_gprs_connect(void)
     gsm_printf("[GSM] gprs_connect() failed!\r\n");
     return false;
   }
-  gsm_command("AT+SAPBR=0,1\r\n", 1000, NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n");
+  gsm_command("AT+SAPBR=0,1\r\n", 5000, NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n");
   gsm_delay(2000);
-  if (gsm_command("AT+SAPBR=1,1\r\n", 85000, NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") != 1)
+  if (gsm_command("AT+SAPBR=1,1\r\n", 90000, NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") != 1)
   {
     gsm.gprs.connect = false;
     gsm.gprs.connected = false;
@@ -50,7 +50,7 @@ bool gsm_gprs_connect(void)
     gsm_unlock();
     return false;
   }
-  gsm_delay(2000);
+  gsm_delay(5000);
   if (gsm_command("AT+SAPBR=2,1\r\n", 1000, (char*)gsm.buffer, sizeof(gsm.buffer), 2, "\r\n+SAPBR: 1,1,", "\r\nERROR\r\n") != 1)
   {
     gsm_printf("[GSM] gprs_connect() failed!\r\n");
@@ -280,7 +280,7 @@ uint32_t gsm_gprs_httpDataLen(void)
   return gsm.gprs.dataLen;
 }
 //###############################################################################################################
-uint16_t gsm_gprs_httpRead(uint16_t len)
+uint16_t gsm_gprs_httpRead(uint8_t *data, uint16_t len)
 {
   if (gsm.gprs.connected == false)
   {
@@ -293,8 +293,8 @@ uint16_t gsm_gprs_httpRead(uint16_t len)
     return false;
   }
   memset(gsm.buffer, 0, sizeof(gsm.buffer));
-  if (len >= sizeof(gsm.buffer))
-    len = sizeof(gsm.buffer);
+  if (len >= sizeof(gsm.buffer) - 32)
+    len = sizeof(gsm.buffer) - 32;
   char buf[32];
   sprintf(buf, "AT+HTTPREAD=%d,%d\r\n", gsm.gprs.dataCurrent, len);
   if (gsm_command(buf, 1000 , (char*)gsm.buffer, sizeof(gsm.buffer), 2, "\r\n+HTTPREAD: ", "\r\nERROR\r\n") != 1)
@@ -303,26 +303,31 @@ uint16_t gsm_gprs_httpRead(uint16_t len)
     gsm_unlock();
     return 0;
   }
+  if (sscanf((char*)gsm.buffer, "\r\n+HTTPREAD: %hd\r\n", &len) != 1)
+  {
+    gsm_printf("[GSM] gprs_httpRead() failed!\r\n");
+    gsm_unlock();
+    return 0;
+  }
   gsm.gprs.dataCurrent += len;
   if (gsm.gprs.dataCurrent >= gsm.gprs.dataLen)
     gsm.gprs.dataCurrent = gsm.gprs.dataLen;
-  uint16_t readLen;
-  char *s = strchr((char*) gsm.buffer, ':');
-  s++;
-  readLen = atoi(s);
-  s = strchr(s, '\n');
-  if (s != NULL)
+  
+  uint8_t *s = (uint8_t*)strchr((char*)gsm.buffer, '\n');  
+  if (s == NULL)
   {
-    s++;
-    for (uint16_t i = 0; i < readLen; i++)
-      gsm.buffer[i] = *s++;
-    gsm_printf("[GSM] gprs_httpRead() done. length: %d\r\n", readLen);
+    gsm_printf("[GSM] gprs_httpRead() failed!\r\n");
     gsm_unlock();
-    return readLen;
+    return 0;
   }
-  gsm_printf("[GSM] gprs_httpRead() failed!\r\n");
+  s++;
+  for (uint16_t i = 0 ; i < len; i++)
+    gsm.buffer[i] = *s++;
+  if (data != NULL)
+    memcpy(data, gsm.buffer, len);
+  gsm_printf("[GSM] gprs_httpRead() done. length: %d\r\n", len);
   gsm_unlock();
-  return 0;
+  return len;      
 }
 //###############################################################################################################
 bool gsm_gprs_httpTerminate(void)
@@ -721,7 +726,7 @@ uint32_t gsm_gprs_ftpGetSize(const char *path, const char *name)
       error = atoi(s);
     }
   } while (0);
-  gsm_printf("[GSM] gprs_ftpGetSize(%s, %s) done. answer: %ld\r\n", path, name, error);
+  gsm_printf("[GSM] gprs_ftpGetSize(%s, %s) done. answer: %d\r\n", path, name, error);
   gsm_unlock();
   return error;
 }

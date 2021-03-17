@@ -11,11 +11,12 @@
  */
 
 /*
- * Version:	5.1.1
+ * Version:	5.1.2
  *
  * History:
  *
- * (5.1.1): Fix HTTP GET/POST.
+ * (5.1.2): Fix read MQTT message. Add MQTT disconnect callback.
+ * (5.1.2): Fix HTTP GET/POST.
  * (5.1.0): Add MQTT. 
  * (5.0.1): Fix GPRS connecting. 
  * (5.0.0):	Rewrite again. Support NONE-RTOS, RTOS V1 and RTOS V2.
@@ -158,6 +159,7 @@ typedef struct
   char              mqttMessage[64];
   uint8_t           mqttData;
   uint8_t           mqttConnected;
+  uint8_t           mqttConnectedLast;
 
 }gsm_gprs_t;
 #endif
@@ -252,7 +254,7 @@ bool            gsm_gprs_httpSendData(const char *data, uint16_t timeout_ms);
 int16_t         gsm_gprs_httpGet(const char *url, bool ssl, uint16_t timeout_ms);
 int16_t         gsm_gprs_httpPost(const char *url, bool ssl, uint16_t timeout_ms);
 uint32_t        gsm_gprs_httpDataLen(void);
-uint16_t        gsm_gprs_httpRead(uint16_t len);
+uint16_t        gsm_gprs_httpRead(uint8_t *data, uint16_t len);
 bool            gsm_gprs_httpTerminate(void);
 
 gsm_ftp_error_t gsm_gprs_ftpLogin(const char *ftpAddress, const char *ftpUserName, const char *ftpPassword, uint16_t port);
@@ -275,6 +277,7 @@ bool            gsm_gprs_ntpSyncTime(void);
 bool            gsm_gprs_ntpGetTime(char *string);
 
 bool            gsm_gprs_mqttConnect(const char *url, uint16_t port, bool cleanFlag, const char *clientID, uint16_t keepAliveSec, const char *user, const char *pass, uint16_t timeoutSec);
+bool            gsm_gprs_mqttDisConnect(void);
 bool            gsm_gprs_mqttSubscribe(const char *topic, bool qos);
 bool            gsm_gprs_mqttUnSubscribe(const char *topic);
 bool            gsm_gprs_mqttPublish(const char *topic, bool qos, bool retain, const char *message);
@@ -292,5 +295,6 @@ void            gsm_callback_newMsg(char *number, gsm_time_t time, char *msg);
 void            gsm_callback_gprsConnected(void);
 void            gsm_callback_gprsDisconnected(void);
 void            gsm_callback_mqttMessage(char *topic, char *message);
+void            gsm_callback_mqttDisconnect(void);
 //###############################################################################################################
 #endif /* _GSM_H_ */

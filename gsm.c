@@ -96,6 +96,8 @@ void gsm_found(char *found_str)
   str = strstr(found_str, "\r\n+SMPUBLISH: ");
   if (str != NULL)
   {
+    memset(gsm.gprs.mqttMessage, 0, sizeof(gsm.gprs.mqttMessage));
+    memset(gsm.gprs.mqttTopic, 0, sizeof(gsm.gprs.mqttTopic));
     str = strtok(str, "\"");
     do
     {
@@ -329,6 +331,16 @@ void gsm_loop(void)
       gsm.gprs.mqttData = 0;
       gsm_callback_mqttMessage(gsm.gprs.mqttTopic, gsm.gprs.mqttMessage);
     }
+    if ((gsm.gprs.mqttConnected == 1) && (gsm.gprs.mqttConnectedLast == 0))
+    {
+      gsm.gprs.mqttConnectedLast = 1;      
+    }
+    else if ((gsm.gprs.mqttConnected == 0) && (gsm.gprs.mqttConnectedLast == 1))
+    {
+      gsm.gprs.mqttConnectedLast = 0;
+      gsm_callback_mqttDisconnect();
+    }
+      
 #endif
     //  --- network check
   }
@@ -341,43 +353,61 @@ void gsm_loop(void)
 
 #if (_GSM_CALL == 1 || _GSM_MSG == 1 || _GSM_GPRS == 1)
     //  +++ check network
-    gsm_getSignalQuality_0_to_100();
-    if (gsm.status.netReg == 0)
+    if (gsm.lock == 0)
     {
-      gsm_command("AT+CREG?\r\n", 1000, NULL, 0, 0);
+      gsm_getSignalQuality_0_to_100();
+      if (gsm.status.netReg == 0)
+      {
+        gsm_command("AT+CREG?\r\n", 1000, NULL, 0, 0);
+      }
     }
     //  --- check network
 
     //  +++ msg check
 #if (_GSM_MSG == 1)
-    if (gsm.msg.storageUsed > 0)
+    if (gsm.lock == 0)
     {
-      for (uint16_t i = 0; i < 150; i++)
+      if (gsm.msg.storageUsed > 0)
       {
-        if (gsm_msg_read(i))
+        for (uint16_t i = 0; i < 150; i++)
         {
-          gsm_msg_delete(i);
-          gsm_callback_newMsg(gsm.msg.number, gsm.msg.time, (char*) gsm.buffer);
+          if (gsm_msg_read(i))
+          {
+            gsm_msg_delete(i);
+            gsm_callback_newMsg(gsm.msg.number, gsm.msg.time, (char*) gsm.buffer);
+          }
         }
+        gsm_msg_updateStorage();
       }
-      gsm_msg_updateStorage();
     }
 #endif
     //  --- msg check
 
     //  +++ gprs check
 #if (_GSM_GPRS == 1)
-    if (gsm.gprs.connect)
+    if (gsm.lock == 0)
     {
-      if (gsm_command("AT+SAPBR=2,1\r\n", 1000, str1, sizeof(str1), 2, "\r\n+SAPBR: 1,", "\r\nERROR\r\n") == 1)
+      if (gsm.gprs.connect)
       {
-        if (sscanf(str1, "\r\n+SAPBR: 1,1,\"%[^\"\r\n]", gsm.gprs.ip) == 1)
+        if (gsm_command("AT+SAPBR=2,1\r\n", 1000, str1, sizeof(str1), 2, "\r\n+SAPBR: 1,", "\r\nERROR\r\n") == 1)
         {
-          if (gsm.gprs.connectedLast == false)
+          if (sscanf(str1, "\r\n+SAPBR: 1,1,\"%[^\"\r\n]", gsm.gprs.ip) == 1)
           {
-            gsm.gprs.connected = true;
-            gsm.gprs.connectedLast = true;
-            gsm_callback_gprsConnected();
+            if (gsm.gprs.connectedLast == false)
+            {
+              gsm.gprs.connected = true;
+              gsm.gprs.connectedLast = true;
+              gsm_callback_gprsConnected();
+            }
+          }
+          else
+          {
+            if (gsm.gprs.connectedLast == true)
+            {
+              gsm.gprs.connected = false;
+              gsm.gprs.connectedLast = false;
+              gsm_callback_gprsDisconnected();
+            }
           }
         }
         else
@@ -388,15 +418,6 @@ void gsm_loop(void)
             gsm.gprs.connectedLast = false;
             gsm_callback_gprsDisconnected();
           }
-        }
-      }
-      else
-      {
-        if (gsm.gprs.connectedLast == true)
-        {
-          gsm.gprs.connected = false;
-          gsm.gprs.connectedLast = false;
-          gsm_callback_gprsDisconnected();
         }
       }
     }
@@ -414,7 +435,8 @@ void gsm_loop(void)
 
     //  +++ msg check
 #if (_GSM_MSG == 1)
-    gsm_msg_updateStorage();
+    if (gsm.lock == 0)
+      gsm_msg_updateStorage();
 #endif
     //  --- msg check
 
