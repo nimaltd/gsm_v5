@@ -102,12 +102,14 @@ bool gsm_gprs_httpInit(void)
     gsm_printf("[GSM] gprs_httpInit() failed!\r\n");
     return false;
   }
+  gsm_command("AT+HTTPTERM\r\n", 1000, NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n");
   if (gsm_command("AT+HTTPINIT\r\n", 1000, NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") != 1)
   {
     gsm_printf("[GSM] gprs_httpInit() failed!\r\n");
     gsm_unlock();
     return false;
   }
+  gsm.gprs.dataCurrent = 0;
   gsm_printf("[GSM] gprs_httpInit() done\r\n");
   gsm_unlock();
   return true;
@@ -313,7 +315,7 @@ uint16_t gsm_gprs_httpRead(uint8_t *data, uint16_t len)
   if (gsm.gprs.dataCurrent >= gsm.gprs.dataLen)
     gsm.gprs.dataCurrent = gsm.gprs.dataLen;
   
-  uint8_t *s = (uint8_t*)strchr((char*)gsm.buffer, '\n');  
+  uint8_t *s = (uint8_t*)strchr((char*)&gsm.buffer[10], '\n');  
   if (s == NULL)
   {
     gsm_printf("[GSM] gprs_httpRead() failed!\r\n");

@@ -11,10 +11,12 @@
  */
 
 /*
- * Version:	5.1.2
+ * Version:	5.1.4
  *
  * History:
  *
+ * (5.1.4): Fix http_read.
+ * (5.1.3): Auto turn on after turn off if needed
  * (5.1.2): Fix read MQTT message. Add MQTT disconnect callback.
  * (5.1.2): Fix HTTP GET/POST.
  * (5.1.0): Add MQTT. 
@@ -180,6 +182,7 @@ typedef struct
 {
   uint8_t           inited;
   uint8_t           lock;
+  uint8_t           error;  
   uint8_t           signal;
   gsm_status_t      status;
   atc_t             atc;

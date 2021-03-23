@@ -239,6 +239,21 @@ void gsm_loop(void)
   if (HAL_GetTick() - gsm_time_1s > 1000)
   {
     gsm_time_1s = HAL_GetTick();
+    
+    if ((gsm.status.turnOn == 1) && (gsm.lock == 0))
+    {
+      if (gsm_command("AT\r\n", 1000, NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") != 1)
+        gsm.error++;
+      else
+        gsm.error = 0;
+      if (gsm.error >= 10)
+      {
+        if (gsm_power(true))
+          gsm.error = 0;          
+      }      
+    }
+    if (gsm.status.turnOff == 1)
+      gsm.error = 0;
 
 #if (_GSM_CALL == 1 || _GSM_MSG == 1 || _GSM_GPRS == 1)
     //  +++ simcard check
@@ -273,7 +288,7 @@ void gsm_loop(void)
     //  --- simcard check
 
     //  +++ network check
-    if ((gsm.status.netChange == 1) && (gsm.status.power == 1))
+    if ((gsm.status.power == 1) && (gsm.status.netChange == 1))
     {
       gsm.status.netChange = 0;
       if (gsm.status.netReg == 1)
@@ -312,35 +327,40 @@ void gsm_loop(void)
 
     //  +++ msg check
 #if (_GSM_MSG == 1)
-    if (gsm.msg.newMsg >= 0)
+    if (gsm.status.power == 1)
     {
-      if (gsm_msg_read(gsm.msg.newMsg))
+      if (gsm.msg.newMsg >= 0)
       {
-        gsm_msg_delete(gsm.msg.newMsg);
-        gsm_callback_newMsg(gsm.msg.number, gsm.msg.time, (char*) gsm.buffer);
+        if (gsm_msg_read(gsm.msg.newMsg))
+        {
+          gsm_msg_delete(gsm.msg.newMsg);
+          gsm_callback_newMsg(gsm.msg.number, gsm.msg.time, (char*) gsm.buffer);
+        }
+        gsm.msg.newMsg = -1;
       }
-      gsm.msg.newMsg = -1;
     }
 #endif
     //  --- msg check
     
     //  +++ network check
 #if (_GSM_GPRS == 1)
-    if (gsm.gprs.mqttData == 1)
+    if (gsm.status.power == 1)
     {
-      gsm.gprs.mqttData = 0;
-      gsm_callback_mqttMessage(gsm.gprs.mqttTopic, gsm.gprs.mqttMessage);
-    }
-    if ((gsm.gprs.mqttConnected == 1) && (gsm.gprs.mqttConnectedLast == 0))
-    {
-      gsm.gprs.mqttConnectedLast = 1;      
-    }
-    else if ((gsm.gprs.mqttConnected == 0) && (gsm.gprs.mqttConnectedLast == 1))
-    {
-      gsm.gprs.mqttConnectedLast = 0;
-      gsm_callback_mqttDisconnect();
-    }
-      
+      if (gsm.gprs.mqttData == 1)
+      {
+        gsm.gprs.mqttData = 0;
+        gsm_callback_mqttMessage(gsm.gprs.mqttTopic, gsm.gprs.mqttMessage);
+      }
+      if ((gsm.gprs.mqttConnected == 1) && (gsm.gprs.mqttConnectedLast == 0))
+      {
+        gsm.gprs.mqttConnectedLast = 1;      
+      }
+      else if ((gsm.gprs.mqttConnected == 0) && (gsm.gprs.mqttConnectedLast == 1))
+      {
+        gsm.gprs.mqttConnectedLast = 0;
+        gsm_callback_mqttDisconnect();
+      }
+    }      
 #endif
     //  --- network check
   }
@@ -353,7 +373,7 @@ void gsm_loop(void)
 
 #if (_GSM_CALL == 1 || _GSM_MSG == 1 || _GSM_GPRS == 1)
     //  +++ check network
-    if (gsm.lock == 0)
+    if ((gsm.status.power == 1) && (gsm.lock == 0))
     {
       gsm_getSignalQuality_0_to_100();
       if (gsm.status.netReg == 0)
@@ -385,7 +405,7 @@ void gsm_loop(void)
 
     //  +++ gprs check
 #if (_GSM_GPRS == 1)
-    if (gsm.lock == 0)
+    if ((gsm.status.power == 1) && (gsm.lock == 0))
     {
       if (gsm.gprs.connect)
       {
@@ -464,8 +484,11 @@ bool gsm_power(bool on_off)
   if ((on_off == true) && (state == 1))
   {
     memset(&gsm.status, 0, sizeof(gsm.status));
+    if (on_off)
+      gsm.status.turnOn = 1;
+    else
+      gsm.status.turnOff = 1;    
     gsm.status.power = 1;
-    gsm.status.turnOn = 1;
     gsm_init_commands();
     gsm_printf("[GSM] power(%d) done\r\n", on_off);
     return true;
@@ -473,7 +496,10 @@ bool gsm_power(bool on_off)
   if ((on_off == true) && (state == 0))
   {
     memset(&gsm.status, 0, sizeof(gsm.status));
-    gsm.status.turnOn = 1;
+    if (on_off)
+      gsm.status.turnOn = 1;
+    else
+      gsm.status.turnOff = 1; 
     HAL_GPIO_WritePin(_GSM_KEY_GPIO, _GSM_KEY_PIN, GPIO_PIN_RESET);
     gsm_delay(1500);
     HAL_GPIO_WritePin(_GSM_KEY_GPIO, _GSM_KEY_PIN, GPIO_PIN_SET);
@@ -504,12 +530,10 @@ bool gsm_power(bool on_off)
   {
     gsm_printf("[GSM] power(%d) done\r\n", on_off);
     gsm.status.power = 0;
-    gsm.status.turnOff = 1;
     return true;
   }
   if ((on_off == false) && (state == 1))
   {
-    gsm.status.turnOff = 1;
     HAL_GPIO_WritePin(_GSM_KEY_GPIO, _GSM_KEY_PIN, GPIO_PIN_RESET);
     gsm_delay(1500);
     HAL_GPIO_WritePin(_GSM_KEY_GPIO, _GSM_KEY_PIN, GPIO_PIN_SET);
