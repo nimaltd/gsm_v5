@@ -11,10 +11,11 @@
  */
 
 /*
- * Version:	5.1.4
+ * Version:	5.1.5
  *
  * History:
  *
+ * (5.1.5): Fix ftp_upload, gprs_connect.
  * (5.1.4): Fix http_read.
  * (5.1.3): Auto turn on after turn off if needed
  * (5.1.2): Fix read MQTT message. Add MQTT disconnect callback.
@@ -147,7 +148,6 @@ typedef struct
 #if (_GSM_GPRS == 1)
 typedef struct
 {
-  bool              connect;
   bool              connected;
   bool              connectedLast;
   char              ip[16];

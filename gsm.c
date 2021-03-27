@@ -232,6 +232,7 @@ void gsm_loop(void)
   static uint32_t gsm_time_1s = 0;
   static uint32_t gsm_time_10s = 0;
   static uint32_t gsm_time_60s = 0;
+  static uint8_t gsm_time_10s_check_power = 0;  
   atc_loop(&gsm.atc);
   char str1[64];
   char str2[16];
@@ -240,21 +241,31 @@ void gsm_loop(void)
   {
     gsm_time_1s = HAL_GetTick();
     
-    if ((gsm.status.turnOn == 1) && (gsm.lock == 0))
+    gsm_time_10s_check_power++;
+    if ((gsm.status.turnOn == 1) && (gsm.lock == 0) && (gsm_time_10s_check_power == 10))
     {
+      gsm_time_10s_check_power = 0;
       if (gsm_command("AT\r\n", 1000, NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") != 1)
         gsm.error++;
       else
         gsm.error = 0;
       if (gsm.error >= 10)
       {
+        gsm.status.power = 0;
         if (gsm_power(true))
           gsm.error = 0;          
       }      
     }
-    if (gsm.status.turnOff == 1)
+    if ((gsm.status.turnOff == 1) && (gsm_time_10s_check_power == 10))
+    {
+      gsm_time_10s_check_power = 0;
       gsm.error = 0;
-
+      if (gsm_command("AT\r\n", 1000, NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") == 1)
+      {
+        gsm_power(false);
+      }
+    }    
+    
 #if (_GSM_CALL == 1 || _GSM_MSG == 1 || _GSM_GPRS == 1)
     //  +++ simcard check
     if ((gsm.status.power == 1) && (gsm.status.simcardChecked == 0))
@@ -307,20 +318,23 @@ void gsm_loop(void)
 
     //  +++ call check
 #if (_GSM_CALL == 1)
-    if (gsm.call.newCall == 1)
+    if ((gsm.status.power == 1)
     {
-      gsm.call.newCall = 0;
-      gsm_callback_newCall(gsm.call.number);
-    }
-    if (gsm.call.endCall == 1)
-    {
-      gsm.call.endCall = 0;
-      gsm_callback_endCall();
-    }
-    if (gsm.call.dtmfUpdate == 1)
-    {
-      gsm.call.dtmfUpdate = 0;
-      gsm_callback_dtmf(gsm.call.dtmfBuffer, gsm.call.dtmfCount);
+      if (gsm.call.newCall == 1)
+      {
+        gsm.call.newCall = 0;
+        gsm_callback_newCall(gsm.call.number);
+      }
+      if (gsm.call.endCall == 1)
+      {
+        gsm.call.endCall = 0;
+        gsm_callback_endCall();
+      }
+      if (gsm.call.dtmfUpdate == 1)
+      {
+        gsm.call.dtmfUpdate = 0;
+        gsm_callback_dtmf(gsm.call.dtmfBuffer, gsm.call.dtmfCount);
+      }
     }
 #endif
     //  --- call check
@@ -407,7 +421,7 @@ void gsm_loop(void)
 #if (_GSM_GPRS == 1)
     if ((gsm.status.power == 1) && (gsm.lock == 0))
     {
-      if (gsm.gprs.connect)
+      if (gsm.gprs.connected)
       {
         if (gsm_command("AT+SAPBR=2,1\r\n", 1000, str1, sizeof(str1), 2, "\r\n+SAPBR: 1,", "\r\nERROR\r\n") == 1)
         {

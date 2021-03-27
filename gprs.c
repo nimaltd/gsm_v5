@@ -44,18 +44,18 @@ bool gsm_gprs_connect(void)
   gsm_delay(2000);
   if (gsm_command("AT+SAPBR=1,1\r\n", 90000, NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") != 1)
   {
-    gsm.gprs.connect = false;
     gsm.gprs.connected = false;
+    gsm.gprs.connectedLast = false;
     gsm_printf("[GSM] gprs_connect() failed!\r\n");
     gsm_unlock();
     return false;
   }
-  gsm_delay(5000);
+  gsm_delay(2000);
   if (gsm_command("AT+SAPBR=2,1\r\n", 1000, (char*)gsm.buffer, sizeof(gsm.buffer), 2, "\r\n+SAPBR: 1,1,", "\r\nERROR\r\n") != 1)
   {
     gsm_printf("[GSM] gprs_connect() failed!\r\n");
-    gsm.gprs.connect = false;
     gsm.gprs.connected = false;
+    gsm.gprs.connectedLast = false;
     gsm_unlock();
     return false;
   }
@@ -64,7 +64,6 @@ bool gsm_gprs_connect(void)
   gsm.gprs.connected = true;
   gsm.gprs.connectedLast = true;
   gsm_printf("[GSM] gprs_connect() done\r\n");
-  gsm.gprs.connect = true;
   gsm_unlock();
   return true;
 }
@@ -76,11 +75,11 @@ bool gsm_gprs_disconnect(void)
     gsm_printf("[GSM] gprs_disconnect() failed!\r\n");
     return false;
   }
+  gsm.gprs.connected = false;
+  gsm.gprs.connectedLast = false;
+  gsm_command("AT+CIPSHUT\r\n", 5000, NULL, 0, 2, "\r\nSHUT OK\r\n", "\r\nERROR\r\n");
   if (gsm_command("AT+SAPBR=0,1\r\n", 1000, NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") == 1)
   {
-    gsm.gprs.connect = false;
-    gsm.gprs.connected = false;
-    gsm.gprs.connectedLast = false;
     gsm_printf("[GSM] gprs_disconnect() done\r\n");
     gsm_unlock();
     return true;
@@ -535,24 +534,29 @@ gsm_ftp_error_t gsm_gprs_ftpExtUploadBegin(bool asciiFile, bool append, const ch
   do
   {
     gsm_command("AT+FTPEXTPUT=0\r\n", 5000, NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n");
+    gsm_delay(100);
     if (asciiFile)
       sprintf((char*)gsm.buffer, "AT+FTPTYPE=\"A\"\r\n");
     else
       sprintf((char*)gsm.buffer, "AT+FTPTYPE=\"I\"\r\n");
     if (gsm_command((char*)gsm.buffer, 1000 , NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") != 1)
       break;
+    gsm_delay(100);
     if (append)
       sprintf((char*)gsm.buffer, "AT+FTPPUTOPT=\"APPE\"\r\n");
     else
       sprintf((char*)gsm.buffer, "AT+FTPPUTOPT=\"STOR\"\r\n");
     if (gsm_command((char*)gsm.buffer, 1000 , NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") != 1)
       break;
+    gsm_delay(100);
     sprintf((char*)gsm.buffer, "AT+FTPPUTPATH=\"%s\"\r\n", path);
     if (gsm_command((char*)gsm.buffer, 1000 , NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") != 1)
       break;
+    gsm_delay(100);
     sprintf((char*)gsm.buffer, "AT+FTPPUTNAME=\"%s\"\r\n", fileName);
     if (gsm_command((char*)gsm.buffer, 1000 , NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") != 1)
       break;
+    gsm_delay(100);
     if (gsm_command("AT+FTPEXTPUT=1\r\n", 5000 , NULL, 0, 2, "\r\nOK\r\n", "\r\nERROR\r\n") != 1)
       break;
     gsm.gprs.ftpExtOffset = 0;
