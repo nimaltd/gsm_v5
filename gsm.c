@@ -222,6 +222,7 @@ bool gsm_init(void)
 #if (_GSM_BLUETOOTH == 1)
 
 #endif
+  gsm_delay(1000);
   gsm_printf("[GSM] init done\r\n");
   gsm.inited = 1;
   return true;
