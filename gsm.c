@@ -190,6 +190,7 @@ bool gsm_init(void)
     return true;
   gsm_printf("[GSM] init begin\r\n");
   HAL_GPIO_WritePin(_GSM_KEY_GPIO, _GSM_KEY_PIN, GPIO_PIN_SET);
+  gsm_delay(3000);
   memset(&gsm, 0, sizeof(gsm));
   atc_init(&gsm.atc, "GSM ATC", _GSM_USART, gsm_found);
   if (atc_addSearch(&gsm.atc, "POWER DOWN\r\n") == false)
