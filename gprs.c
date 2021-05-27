@@ -6,7 +6,7 @@ bool gsm_gprs_setApName(const char *apName)
 {
   if (apName == NULL)
   {
-    gsm_printf("[GSM] gprs_setApName(%s) failed!\r\n", apName);
+    gsm_printf("[GSM] gprs_setApName() failed!\r\n");
     return false;
   }
   if (gsm_lock(10000) == false)
