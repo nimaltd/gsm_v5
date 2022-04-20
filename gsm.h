@@ -11,10 +11,11 @@
  */
 
 /*
- * Version:	5.1.5
+ * Version:	5.1.6
  *
  * History:
  *
+ * (5.1.6): Add fs and ssl cert file.
  * (5.1.5): Fix ftp_upload, gprs_connect.
  * (5.1.4): Fix http_read.
  * (5.1.3): Auto turn on after turn off if needed
@@ -250,6 +251,8 @@ bool            gsm_gprs_setApName(const char *apName);
 bool            gsm_gprs_connect(void);
 bool            gsm_gprs_disconnect(void);
 
+bool 						gsm_gprs_cert(char *file_name);
+
 bool            gsm_gprs_httpInit(void);
 bool            gsm_gprs_httpSetContent(const char *content);
 bool            gsm_gprs_httpSetUserData(const char *data);
@@ -284,6 +287,10 @@ bool            gsm_gprs_mqttDisConnect(void);
 bool            gsm_gprs_mqttSubscribe(const char *topic, bool qos);
 bool            gsm_gprs_mqttUnSubscribe(const char *topic);
 bool            gsm_gprs_mqttPublish(const char *topic, bool qos, bool retain, const char *message);
+//###############################################################################################################
+bool 						gsm_fs_create(char *file_name);
+bool 						gsm_fs_write(char *file_name, bool append, char *data);
+uint16_t 				gsm_fs_get_size(char *file_name);
 //###############################################################################################################
 void            gsm_callback_simcardReady(void);
 void            gsm_callback_simcardPinRequest(void);

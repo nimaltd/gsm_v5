@@ -320,7 +320,7 @@ void gsm_loop(void)
 
     //  +++ call check
 #if (_GSM_CALL == 1)
-    if (gsm.status.power == 1)
+    if ((gsm.status.power == 1)
     {
       if (gsm.call.newCall == 1)
       {

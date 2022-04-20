@@ -6,7 +6,7 @@ bool gsm_gprs_setApName(const char *apName)
 {
   if (apName == NULL)
   {
-    gsm_printf("[GSM] gprs_setApName() failed!\r\n");
+    gsm_printf("[GSM] gprs_setApName(%s) failed!\r\n", apName);
     return false;
   }
   if (gsm_lock(10000) == false)
@@ -1121,6 +1121,25 @@ bool gsm_gprs_mqttPublish(const char *topic, bool qos, bool retain, const char *
   gsm_printf("[GSM] gprs_mqttPublish() done\r\n");
   gsm_unlock();
   return true;   
+}
+//###############################################################################################################
+bool gsm_gprs_cert(char *file_name)
+{
+	if (gsm_lock(10000) == false)
+  {
+    gsm_printf("[GSM] gprs_cert() failed!\r\n");
+    return false;
+  }
+	sprintf((char*)gsm.buffer, "AT+SSLSETCERT=\"C:\\USER\\%s\"\r\n", file_name);
+  if (gsm_command((char*)gsm.buffer , 2000 , NULL, 0, 2, "\r\n+SSLSETCERT: 0\r\n", "\r\nERROR\r\n") != 1)
+  {
+    gsm_printf("[GSM] gprs_cert() failed!\r\n");
+    gsm_unlock();
+    return false;
+  }
+  gsm_printf("[GSM] gprs_cert() done\r\n");
+  gsm_unlock();
+  return true;   	
 }
 //###############################################################################################################
 #endif
