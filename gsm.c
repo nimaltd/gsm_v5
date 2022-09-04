@@ -950,4 +950,55 @@ bool gsm_ussd(char *command, char *answer, uint16_t sizeOfAnswer, uint8_t waitSe
   }
 }
 //###############################################################################################################
-
+bool gsm_getPhonebookNumber(uint16_t index, char* getnumber)
+{
+	if (getnumber == NULL)
+	{
+		gsm_printf("[GSM] getPhonebookNumber(%d) failed!\r\n", index);
+		return false;
+	}
+	if (gsm_lock(10000) == false)
+	{
+		gsm_printf("[GSM] getPhonebookNumber(%d) failed!\r\n", index);
+	  return false;
+	}
+	char str[32];
+	sprintf(str, "AT+CPBR=%d\r\n", index);
+	if (gsm_command(str, 5000, (char* )gsm.buffer, sizeof(gsm.buffer), 3, "\r\n+CPBR:", "\r\nOK\r\n", "\r\nERROR\r\n")
+		!= 1)
+	{
+		gsm_printf("[GSM] getPhonebookNumber(%d) failed!\r\n", index);
+		gsm_unlock();
+		return false;
+	}
+	sscanf((char*)gsm.buffer, "%*[^\"]\"%[^\"]", getnumber);
+	gsm_printf("[GSM] getPhonebookNumber(%d) done\r\n", index);
+	gsm_unlock();
+	return true;
+}
+//###############################################################################################################
+bool gsm_isNumberExistInPhonebook(char* number, uint8_t from, uint8_t to)
+{
+	if (number == NULL)
+	{
+		gsm_printf("[GSM] getPhonebookNumber() failed!\r\n");
+		return false;
+	}
+	char buffer[32] = {};
+	for (uint16_t index = from; index <= to; index++)
+	{
+		if (gsm_getPhonebookNumber(index, buffer) != 1)
+		{
+			gsm_printf("[GSM] gsm_isNumberExistInPhonebook(%d) failed!\r\n", index);
+			return false;
+		}
+		if (strcmp(number, buffer) == 0)
+		{
+			gsm_printf("[GSM] gsm_isNumberExistInPhonebook(%d) done!\r\n", index);
+			return true;
+		}
+	}
+	gsm_printf("[GSM] gsm_isNumberExistInPhonebook() failed!\r\n");
+	return false;
+}
+//###############################################################################################################

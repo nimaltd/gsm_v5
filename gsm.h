@@ -229,6 +229,8 @@ bool            gsm_tonePlay(gsm_tone_t gsm_tone_, uint32_t durationMiliSecond, 
 bool            gsm_toneStop(void);
 bool            gsm_dtmf(char *string, uint32_t durationMiliSecond);
 bool            gsm_ussd(char *command, char *answer, uint16_t sizeOfAnswer, uint8_t waitSecond);
+bool 		        gsm_isNumberExistInPhonebook(char* number, uint8_t from, uint8_t to);
+bool 		        gsm_getPhonebookNumber(uint16_t index, char* getnumber);
 //###############################################################################################################
 bool            gsm_call_answer(void);
 bool            gsm_call_dial(const char *number, uint8_t waitSecond);
