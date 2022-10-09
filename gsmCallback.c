@@ -32,6 +32,16 @@ void gsm_callback_networkUnregister(void)
   gsm_printf("CALLBACK NETWORK UNREGISTER\r\n");
 }
 //###############################################################################################################
+#if (_GSM_MAIN_POWER == 1)
+void gsm_callback_networkNotFound(void)
+{
+  gsm_printf("CALLBACK NETWORK NOT FOUND\r\n");
+	// Reset GSM Power
+	gsm_power(false);
+	gsm_power(true);
+}
+#endif
+//###############################################################################################################
 #if (_GSM_CALL == 1)
 void gsm_callback_newCall(const char *number)
 {
