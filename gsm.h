@@ -38,7 +38,7 @@
 #else
 #define gsm_printf(...)     {};
 #endif
-
+#define _GSM_RTOS           _ATC_RTOS
 typedef enum
 {
   gsm_tone_dialTone = 1,
@@ -176,6 +176,9 @@ typedef struct
   uint8_t           simcardChecked:1;
   uint8_t           turnOff:1;
   uint8_t           turnOn:1;
+  #if(_GSM_SIM_DETECTOR == 1)
+    uint8_t           simDetCangeInterruptFlag:1;
+  #endif
 
 }gsm_status_t;
 
@@ -308,5 +311,7 @@ void            gsm_callback_gprsConnected(void);
 void            gsm_callback_gprsDisconnected(void);
 void            gsm_callback_mqttMessage(char *topic, char *message);
 void            gsm_callback_mqttDisconnect(void);
+void            gsm_callback_networkNotFound(void);
+void            gsm_callback_simDetectorISR(void);
 //###############################################################################################################
 #endif /* _GSM_H_ */
