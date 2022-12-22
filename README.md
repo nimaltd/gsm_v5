@@ -3,7 +3,7 @@
 *	WebSite:    https://www.github.com/NimaLTD
 *	Instagram:  https://www.instagram.com/github.NimaLTD
 *	LinkedIn:   https://www.linkedin.com/in/NimaLTD
-*	Youtube:    https://www.youtube.com/channel/UCUhY7qY1klJm1d2kulr9ckw 
+*	Youtube:    https://www.youtube.com/@nimaltd 
 --------------------------------------------------------------------------------
 * This library using my 'atc' library, please download 'http://github.com/nimaltd/atc'.
 --------------------------------------------------------------------------------
