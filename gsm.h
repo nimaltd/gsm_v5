@@ -11,10 +11,11 @@
  */
 
 /*
- * Version:	5.1.6
+ * Version:	5.1.7
  *
  * History:
  *
+ * (5.1.7): Auto Delete all messages if can not read.
  * (5.1.6): Add fs and ssl cert file.
  * (5.1.5): Fix ftp_upload, gprs_connect.
  * (5.1.4): Fix http_read.
@@ -38,7 +39,7 @@
 #else
 #define gsm_printf(...)     {};
 #endif
-#define _GSM_RTOS           _ATC_RTOS
+
 typedef enum
 {
   gsm_tone_dialTone = 1,
@@ -176,9 +177,6 @@ typedef struct
   uint8_t           simcardChecked:1;
   uint8_t           turnOff:1;
   uint8_t           turnOn:1;
-  #if(_GSM_SIM_DETECTOR == 1)
-    uint8_t           simDetCangeInterruptFlag:1;
-  #endif
 
 }gsm_status_t;
 
@@ -232,8 +230,6 @@ bool            gsm_tonePlay(gsm_tone_t gsm_tone_, uint32_t durationMiliSecond, 
 bool            gsm_toneStop(void);
 bool            gsm_dtmf(char *string, uint32_t durationMiliSecond);
 bool            gsm_ussd(char *command, char *answer, uint16_t sizeOfAnswer, uint8_t waitSecond);
-bool 		        gsm_isNumberExistInPhonebook(char* number, uint8_t from, uint8_t to);
-bool 		        gsm_getPhonebookNumber(uint16_t index, char* getnumber);
 //###############################################################################################################
 bool            gsm_call_answer(void);
 bool            gsm_call_dial(const char *number, uint8_t waitSecond);
@@ -311,7 +307,5 @@ void            gsm_callback_gprsConnected(void);
 void            gsm_callback_gprsDisconnected(void);
 void            gsm_callback_mqttMessage(char *topic, char *message);
 void            gsm_callback_mqttDisconnect(void);
-void            gsm_callback_networkNotFound(void);
-void            gsm_callback_simDetectorISR(void);
 //###############################################################################################################
 #endif /* _GSM_H_ */
