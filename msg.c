@@ -330,6 +330,8 @@ bool gsm_msg_read(uint16_t index)
   {
     char str[20];
     uint16_t d[6];
+		char tmpNumber[28];
+
     sprintf(str, "AT+CMGR=%d\r\n", index);
     if (gsm_command(str, 5000, (char* )gsm.buffer, sizeof(gsm.buffer), 3, "\r\n+CMGR:", "\r\nOK\r\n", "\r\nERROR\r\n")
         != 1)
@@ -339,13 +341,35 @@ bool gsm_msg_read(uint16_t index)
       return false;
     }
     sscanf((char*) gsm.buffer, "\r\n+CMGR: \"%[^\"]\",\"%[^\"]\",\"\",\"%hd/%hd/%hd,%hd:%hd:%hd%*d\"", gsm.msg.status,
-        gsm.msg.number, &d[0], &d[1], &d[2], &d[3], &d[4], &d[5]);
+        tmpNumber, &d[0], &d[1], &d[2], &d[3], &d[4], &d[5]);
     gsm.msg.time.year = d[0];
     gsm.msg.time.month = d[1];
     gsm.msg.time.day = d[2];
     gsm.msg.time.hour = d[3];
     gsm.msg.time.minute = d[4];
     gsm.msg.time.second = d[5];
+
+		if(gsm.msg.characterSet == gsm_msg_chSet_hex)
+		{
+			char hold[3];
+			int size = strlen(tmpNumber);
+			
+			for(int i = 0; i < size; i+=2)
+			{
+				memcpy(hold, tmpNumber, 2);
+				memmove(tmpNumber, tmpNumber+2, 27);
+				if(strcmp(hold, "2B") == 0)
+					gsm.msg.number[0] = '+';
+				else
+					gsm.msg.number[i/2] = hold[1];
+			}
+			
+		}
+		else
+		{
+			memcpy(gsm.msg.number, tmpNumber, 16);
+		}
+
     uint8_t cnt = 0;
     char *s = strtok((char*) gsm.buffer, "\"");
     while (s != NULL)
