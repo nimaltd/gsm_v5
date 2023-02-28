@@ -1,4 +1,5 @@
 #include "gsm.h"
+#include "pdu.h"
 
 #if (_GSM_MSG == 1)
 //###############################################################################################################
@@ -196,9 +197,11 @@ bool gsm_msg_send(const char *number, const char *msg)
     gsm_printf("[GSM] msg_send() failed!\r\n");
     return false;
   }
-  if (gsm.msg.textMode)
+
+  char str[32];
+  // +++ text mode
+  if (gsm.msg.textMode == 1)
   {
-    char str[32];
     sprintf(str, "AT+CMGS=\"%s\"\r\n", number);
     if (gsm_command(str, 5000 , NULL, 0, 2, "\r\r\n> ", "\r\nERROR\r\n") != 1)
     {
@@ -219,12 +222,40 @@ bool gsm_msg_send(const char *number, const char *msg)
     gsm_unlock();
     return true;
   }
-  else
-  {
+  // --- text mode
+
+  // +++ pdu mode
+  else if(gsm.msg.textMode == 0)
+  {		
+    int messageLen = PDU_encode(NULL, false, false, false, 0, 0, number, 0, msg, 0);
+    if(messageLen > 0)
+    {
+      sprintf(str, "AT+CMGS=%d\r\n", messageLen);
+      if (gsm_command(str, 5000 , NULL, 0, 2, "\r\r\n> ", "\r\nERROR\r\n") != 1)
+      {
+        sprintf(str, "%c", 27);
+        gsm_command(str, 1000, NULL, 0, 0);
+        gsm_printf("[GSM] msg_send() failed!\r\n");
+        gsm_unlock();
+        return false;
+      }
+      sprintf((char *)gsm.buffer, "%s%c", PDU_getPDUBuffer(), 26);
+      if(gsm_command((char *)gsm.buffer, 8000, NULL, 0, 2, "\r\n+CMGS:", "\r\nERROR\r\n") != 1)
+      {
+        gsm_printf("[GSM] msg_send() failed!\r\n");
+        gsm_unlock();
+        return false;
+      }
+      gsm_printf("[GSM] msg_send() done\r\n");
+      gsm_unlock();
+      return true;
+
+    }
     gsm_printf("[GSM] msg_send() failed!\r\n");
     gsm_unlock();
     return false;
   }
+  // --- pdu mode
 }
 //###############################################################################################################
 bool gsm_msg_selectStorage(gsm_msg_store_t gsm_msg_store_)
@@ -325,10 +356,10 @@ bool gsm_msg_read(uint16_t index)
     gsm_printf("[GSM] msg_read(%d) failed!\r\n", index);
     return false;
   }
+  char str[20];
   //  +++ text mode
   if (gsm.msg.textMode == 1)
   {
-    char str[20];
     uint16_t d[6];
     sprintf(str, "AT+CMGR=%d\r\n", index);
     if (gsm_command(str, 5000, (char* )gsm.buffer, sizeof(gsm.buffer), 3, "\r\n+CMGR:", "\r\nOK\r\n", "\r\nERROR\r\n")
@@ -376,11 +407,26 @@ bool gsm_msg_read(uint16_t index)
   //  --- text mode
 
   //  +++ pdu mode
-  else
+  else if(gsm.msg.textMode == 0)
   {
-    gsm_printf("[GSM] msg_read(%d) failed!\r\n", index);
-    gsm_unlock();
-    return false;
+		
+    sprintf(str, "AT+CMGR=%d\r\n", index);
+    if (gsm_command(str, 5000, (char* )gsm.buffer, sizeof(gsm.buffer), 3, "\r\n+CMGR:", "\r\nOK\r\n", "\r\nERROR\r\n")
+        != 1)
+    {
+      gsm_printf("[GSM] msg_read(%d) failed!\r\n", index);
+      gsm_unlock();
+      return false;
+    }
+    char *end = strstr(gsm.buffer, "\r\n\r\nOK\r\n");
+    char *s = strtok((char*) gsm.buffer, "\r\n");
+		s = strtok(NULL, "\r\n");
+		strncpy((char*) &gsm.buffer[0], s, end - s);
+		memset(&gsm.buffer[end - s], 0, sizeof(gsm.buffer) - (end - s));
+		
+		gsm_printf("[GSM] msg_read(%d) done\r\n", index);
+		gsm_unlock();
+		return true;
   }
   //  --- pdu mode
 
